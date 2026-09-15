@@ -1,0 +1,10 @@
+$ FM_HOME=<isolated-home> bash bin/fm-harness.sh crew
+humanlayer
+$ FM_HOME=<isolated-home> bash bin/fm-harness.sh crew
+codex
+submit HumanLayer on cmux: error: unsupported backend for HumanLayer dispatch: cmux (supported: tmux, herdr)
+exit=1
+submit HumanLayer on orca: error: unsupported backend for HumanLayer dispatch: orca (supported: tmux, herdr)
+exit=1
+submit HumanLayer on zellij: error: unsupported backend for HumanLayer dispatch: zellij (supported: tmux, herdr)
+exit=1
