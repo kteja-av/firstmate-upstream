@@ -2007,3 +2007,42 @@ A throwaway scout was spawned through `bin/fm-spawn.sh --scout --harness omp --m
 6. `bin/fm-control.sh <id> exit` stopped the agent and `bin/fm-teardown.sh` returned the worktree and closed the item.
 
 `FM_OMP_LIVE_E2E=1 tests/fm-omp-primary-live-e2e.test.sh` refreshes the primary evidence; the worker path above is refreshed by repeating the scout dispatch after any omp upgrade.
+
+## HumanLayer (humanlayer)
+
+humanlayer runs crewmate and scout work; its adapter reference ([`.agents/skills/harness-adapters/references/harness/humanlayer.md`](../../.agents/skills/harness-adapters/references/harness/humanlayer.md)) owns the operating-facts table and the one-owner statements of the busy-anchor and control contracts.
+The evidence below was produced on 2026-09-15 against humanlayer 0.31.0 (`~/.local/bin/humanlayer`, config home `~/.humanlayer`) on macOS arm64 through the tmux backend, with the Codex provider defaulting to `gpt-6-astra`.
+
+### Process identity and markers
+
+The installed launcher is a node shim, and the pane process is `node /Users/<home>/.local/bin/humanlayer codelayer --provider codex` whose native child (`.../@humanlayer/cli-darwin-arm64/bin/humanlayer`) reports `comm` exactly `humanlayer`, so identity is the anchored name at comm strength with the shim matched at args strength.
+A live codelayer tool subprocess inherited the launching shell's `PI_CODING_AGENT` and `AI_AGENT` unchanged and added no `HUMANLAYER_*` or `CODELAYER_*` variable, so no marker is promoted and the spawn template clears foreign primary markers at the launch boundary.
+A fresh directory showed no trust dialog in interactive or non-interactive runs, so no trust pre-registration exists.
+
+### Busy anchor and lifecycle
+
+| Fact | Observed |
+| --- | --- |
+| Idle anchor | the bottom-most non-blank pane row is exactly the bare `>` composer, at session start and immediately after every settled turn |
+| Running turn | the anchor is replaced by the submitted prompt's echo row and streaming `[Tool]`/`[Tool Result]`/`[Assistant]` rows; no pinned busy footer or spinner row exists |
+| Semantic source | none; no hook surface, so `fm_busy_sources_for_harness` trusts nothing and nothing is armed or seeded |
+| Classification | the `humanlayer-anchor` arm of `bin/fm-busy-lib.sh`: last non-blank row exactly `>` is idle, any other non-blank capture is busy, a blank capture stays unknown |
+| Multi-turn | context persists across composer submissions; a fresh steer after a settled turn ran with full history |
+| Interrupt | a single `Ctrl+C` mid-turn printed `[Done] Agent interrupted` and returned the bare `>` composer; `Escape` was a no-op mid-turn |
+| Exit | a single `Ctrl+C` at the idle composer exited the process; typed `/quit` and `/exit` reached the model as chat and did NOT exit |
+| Effort | `--thinking low` and `--thinking xhigh` ran; `--thinking max` failed with "OpenAI Responses does not support reasoning effort max", so max is record-and-omit |
+| Non-interactive | `--prompt` ran to completion, exit 0, with the final message between `__CODELAYER_FINAL_MESSAGE_START__`/`__CODELAYER_FINAL_MESSAGE_END__` markers; deliberately not the worker shape |
+| Busy steering | text typed mid-turn landed in a hidden buffer and `Enter` did not queue it; the message was lost at turn end with no echo, response, or error |
+
+### End-to-end
+
+A trivial ship task was spawned through `bin/fm-spawn.sh --harness humanlayer` on tmux from an isolated disposable worktree and driven through the full loop:
+
+1. the launch came up bare, the readiness gate saw the banner plus the bare `>` anchor, and the brief pointer was submitted through the composer;
+2. the delivery gate confirmed the busy anchor, the worker processed the brief with no approval prompt, and the bare `>` anchor returned at the natural turn end;
+3. `bin/fm-send.sh` delivered a steer through the durable inbox once the anchor read idle;
+4. `bin/fm-control.sh <id> interrupt` cancelled a running turn with the worker still alive;
+5. `bin/fm-control.sh <id> exit` stopped the agent through the verified `Ctrl+C` exit key.
+
+`FM_HUMANLAYER_SIGNALS_LIVE=1 bash tests/fm-humanlayer-signals-live-e2e.test.sh` refreshes the TUI-surface evidence; it submits real prompts, so it stays opt-in.
+The portable regressions `tests/fm-humanlayer-harness.test.sh` pin the detection, anchor classification, and control tables without any installed harness.

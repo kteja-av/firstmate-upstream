@@ -42,7 +42,8 @@
 #   fm-interrupt     the legacy Claude fm-send --key Escape idle event
 #   fm-recovery      a documented recovery reset after relaunch
 # Classifier-only sources (never written into a record):
-#   endpoint-gone, herdr-native, grok-regex, rovo-regex, agy-regex, muse-session-log,
+#   endpoint-gone, herdr-native, grok-regex, rovo-regex, agy-regex,
+#   humanlayer-anchor, muse-session-log,
 #   cursor-transcript, missing, malformed, gen-mismatch, source-mismatch,
 #   kimi-unverified, codex-unverified, capture-failed, no-target
 #
@@ -55,14 +56,20 @@
 #      (generation state is sufficient for busy, not for idle), then the
 #      muse session-log and cursor transcript pull sources, then the
 #      Grok/Rovo/AGY temporary regex fallbacks classify a grok, rovo, or agy
-#      task from its rendered tail, then unknown missing
+#      task from its rendered tail; the humanlayer anchor classifies a
+#      humanlayer task from its pinned composer row (see
+#      fm_busy_humanlayer_tail_idle), then unknown missing
 #   5. malformed, stale, or untrusted records -> unknown, never a fallback
-# Grok, Rovo, and AGY are the ONLY rendered-text classifications that survive the
-# redesign, because none of their structured lifecycles was credited-live-verified
-# in the approved audit (Rovo's clean ACP stopReason lives outside the TUI
-# path firstmate drives, see references/harness/rovo.md; agy 1.2.0 exposes no
-# hook surface at all, see references/harness/agy.md); each is scoped to
-# its own harness= and can never classify another adapter. The delivery
+# Grok, Rovo, and AGY are the ONLY positive rendered-marker classifications
+# that survive the redesign, because none of their structured lifecycles was
+# credited-live-verified in the approved audit (Rovo's clean ACP stopReason
+# lives outside the TUI path firstmate drives, see references/harness/rovo.md;
+# agy 1.2.0 exposes no hook surface at all, see references/harness/agy.md);
+# each is scoped to its own harness= and can never classify another adapter.
+# HumanLayer's anchor is the one rendered classification since: it has the
+# same absent hook surface, and its idle anchor (the pinned bare `>`
+# composer row) is verified in the reference rather than a free-floating
+# output word, so it cannot false-busy on echoed worker output. The delivery
 # guards in bin/fm-composer-lib.sh match rendered footers for submit
 # acknowledgement and away-mode supervisor injection only; neither is a
 # recorded worker state source.
@@ -867,11 +874,33 @@ fm_busy_agy_tail_busy() {
     | grep -qiE 'esc[[:space:]]+to[[:space:]]+cancel'
 }
 
+# fm_busy_humanlayer_tail_idle: the humanlayer-only rendered-anchor test.
+# Consumes a tail on stdin; 0 when the LAST non-blank line is exactly the
+# bare `>` composer row (verified live on humanlayer 0.31.0: at idle the
+# TUI pins a bare `>` composer row as the bottom-most non-blank row, while
+# a running turn replaces it with streaming `[Tool]`/`[Assistant]` rows or
+# the submitted prompt's echo row, and re-renders the bare `>` the moment
+# the turn settles). The anchor is a NEGATIVE idle test, deliberately the
+# opposite shape of the grok/rovo/agy positive markers: humanlayer renders
+# no pinned busy footer, and every transcript token (`[Done] complete`,
+# `[Assistant]`, `> <echo>`) persists in the visible history at idle, so
+# only the composer row itself separates the two states. Trailing
+# whitespace is tolerated; a changed composer glyph breaks this toward
+# busy, which fails loud in stale detection instead of silently reporting
+# a finished turn.
+fm_busy_humanlayer_tail_idle() {
+  local last
+  last=$(grep -v '^[[:space:]]*$' | tail -1) || return 1
+  [ -n "$last" ] || return 1
+  last=${last%"${last##*[![:space:]]}"}
+  [ "$last" = '>' ]
+}
+
 # fm_busy_classify: semantic classification for a task whose endpoint the
 # caller has already established as present. Prints "<verdict> <source>":
 # busy|idle|unknown plus the producing source (see header). Never probes
 # process state. <tail40> is optional pre-captured plain output used only by
-# the grok, rovo, and agy arms; when absent each captures through
+# the grok, rovo, agy, and humanlayer arms; when absent each captures through
 # fm_backend_capture if available, else reports unknown capture-failed.
 fm_busy_classify() {  # <backend> <target> <harness> <id> <state-dir> [tail40]
   local backend=$1 target=$2 harness=$3 id=$4 state=$5 tail40=${6-}
@@ -1013,6 +1042,34 @@ fm_busy_classify() {  # <backend> <target> <harness> <id> <state-dir> [tail40]
         printf 'busy agy-regex'
       else
         printf 'unknown agy-regex'
+      fi
+      return 0
+      ;;
+    humanlayer)
+      if [ -z "$tail40" ]; then
+        if command -v fm_backend_capture >/dev/null 2>&1; then
+          tail40=$(fm_backend_capture "$backend" "$target" 40 2>/dev/null) || {
+            printf 'unknown capture-failed'
+            return 0
+          }
+        else
+          printf 'unknown capture-failed'
+          return 0
+        fi
+      fi
+      # The bare-`>` composer anchor is two-sided where the grok/rovo/agy
+      # markers are one-sided: its presence as the last rendered row is
+      # positive proof of an idle composer, and its absence while the pane
+      # still renders transcript rows is positive proof of a running turn.
+      # Only a blank or unreadable capture stays unknown, never idle.
+      if printf '%s' "$tail40" | grep -qv '^[[:space:]]*$'; then
+        if printf '%s' "$tail40" | fm_busy_humanlayer_tail_idle; then
+          printf 'idle humanlayer-anchor'
+        else
+          printf 'busy humanlayer-anchor'
+        fi
+      else
+        printf 'unknown humanlayer-anchor'
       fi
       return 0
       ;;

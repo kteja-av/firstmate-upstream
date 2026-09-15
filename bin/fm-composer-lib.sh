@@ -371,12 +371,36 @@ FM_DELIVERY_CURSOR_BUSY_REGEX_DEFAULT='ctrl\+c to stop'
 # agy-regex fold in bin/fm-busy-lib.sh.
 FM_DELIVERY_AGY_BUSY_REGEX_DEFAULT='esc[[:space:]]+to[[:space:]]+cancel'
 FM_DELIVERY_KIMI_BUSY_REGEX_DEFAULT='^[[:space:]]*(🌑|🌒|🌓|🌔|🌕|🌖|🌗|🌘)[[:space:]]+·[[:space:]]+'
+# humanlayer (HumanLayer CLI) renders no pinned busy footer; the verified
+# delivery signature is the INVERSE anchor: at idle the TUI pins a bare `>`
+# composer row as the bottom-most non-blank row, and any running turn
+# replaces it with streaming rows or the submitted prompt's echo row
+# (verified live, humanlayer 0.31.0). Because the signature is an inverted
+# last-row test rather than a token search, it is implemented as its own arm
+# in fm_busy_lines_match below, not as a regex: a token regex would
+# false-acknowledge on transcript history (`[Done] complete`, `> <echo>`),
+# which stays visible at idle.
+FM_DELIVERY_HUMANLAYER_IDLE_ANCHOR='>'
 
 fm_busy_lines_match() {  # [harness]
-  local harness=${1:-} lines regex
+  local harness=${1:-} lines regex last
   IFS= read -r -d '' lines || true
   if [ -n "${FM_BUSY_REGEX:-}" ]; then
     regex=$FM_BUSY_REGEX
+  elif [ "$harness" = humanlayer ]; then
+    # humanlayer arm: busy iff the visible tail's LAST non-blank line is not
+    # exactly the bare `>` idle anchor (trailing whitespace tolerated).
+    # Callers guarantee non-empty input (fm_pane_busy_state guards), and an
+    # empty input here reads not-busy only because that caller guard exists.
+    # The anchor test's own status is the function's return value: `>` reads
+    # idle (nonzero), anything else reads busy (zero).
+    last=$(printf '%s' "$lines" | grep -v '^[[:space:]]*$' | tail -1) || return 1
+    last=${last%"${last##*[![:space:]]}"}
+    # Return the anchor test's own status before the regex epilogue below:
+    # with regex unset that epilogue would overwrite the verdict with a
+    # uniform nonzero.
+    [ "$last" != "$FM_DELIVERY_HUMANLAYER_IDLE_ANCHOR" ]
+    return
   else
     case "$harness" in
       claude) regex=$FM_DELIVERY_CLAUDE_BUSY_REGEX_DEFAULT ;;
