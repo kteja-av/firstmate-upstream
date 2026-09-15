@@ -215,6 +215,13 @@ EOF
   for color in '34;197;94' '239;68;68' '234;179;8'; do
     verdict=$(printf '> prior prompt\n\033[38;2;%sm[Done]\033[39m complete\n>\n' "$color" | fm_humanlayer_screen_state)
     [ "$verdict" = idle ] || fail "styled completion must retire submitted history: $color"
+    # The herdr ANSI dialect (verified live on a real settled herdr pane):
+    # a leading SGR reset run precedes the color code, the reset after the
+    # [Done] token is ESC[0m, and rows carry CR line endings. The fold must
+    # accept it exactly as it accepts tmux's, or a settled herdr pane reads
+    # unknown forever (the sandbox-reported gap).
+    verdict=$(printf '> prior prompt\r\n\033[0m\033[38;2;%sm[Done]\033[0m complete\r\n> \r\n' "$color" | fm_humanlayer_screen_state)
+    [ "$verdict" = idle ] || fail "the herdr completion dialect must retire submitted history: $color"
   done
   verdict=$(printf '>\n[Done] complete\n>\n' | fm_humanlayer_screen_state)
   [ "$verdict" = unknown ] || fail "a draft with an empty first line must remain unsafe"
@@ -702,3 +709,95 @@ PYTEST
   pass "HumanLayer activity is scoped to live tool descendants of the identified worker"
 }
 test_humanlayer_real_process_activity
+
+test_humanlayer_herdr_busy_probe() {
+  local lab="$$TMP_ROOT/process-activity"
+  lab="$TMP_ROOT/herdr-probe"
+  mkdir -p "$lab/fakebin"
+  cc -o "$lab/humanlayer" "$TMP_ROOT/process-activity/worker.c" 2>/dev/null \
+    || { cat > "$lab/worker.c" <<'C'
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/wait.h>
+int main(int argc, char **argv) {
+  (void)argv;
+  pid_t child = 0;
+  if (argc > 1) {
+    child = fork();
+    if (child < 0) return 1;
+    if (child == 0) { if (setpgid(0, 0) != 0) _exit(2); execl("/bin/sleep", "sleep", "90", (char *)0); _exit(1); }
+  }
+  fflush(stdout);
+  printf("%d\n", (int)child);
+  fflush(stdout);
+  if (child) waitpid(child, NULL, 0);
+  else pause();
+  return 0;
+}
+C
+      cc -o "$lab/humanlayer" "$lab/worker.c" || fail "could not build the herdr probe fixture"
+    }
+  cat > "$lab/fakebin/herdr" <<'SH'
+#!/usr/bin/env bash
+set -u
+case "$*" in
+  *status*)
+    printf '{"client":{"version":"0.7.1","protocol":14},"server":{"running":true}}\n'
+    ;;
+  *"pane process-info"*)
+    cat "${FAKE_HL_PROCINFO:?}"
+    ;;
+  *)
+    printf '{"result":{}}\n'
+    ;;
+esac
+SH
+  chmod +x "$lab/fakebin/herdr"
+  herdr_busy_verdict() {  # <worker-pid> -> 0 when busy
+    local worker=$1
+    jq -n --argjson pid "$worker" '
+      {result:{process_info:{
+        shell_pid: ($pid - 100),
+        foreground_processes: [
+          {pid: $pid, name: "humanlayer"},
+          {pid: ($pid - 1), name: "node"}
+        ]
+      }}}' > "$lab/procinfo.json"
+    FAKE_HL_PROCINFO="$lab/procinfo.json" \
+      PATH="$lab/fakebin:$PATH" FM_BACKEND_HERDR_BIN="$lab/fakebin/herdr" \
+      bash -c '
+        set -u
+        . "$1/bin/backends/herdr.sh"
+        . "$1/bin/fm-humanlayer-lib.sh"
+        fm_backend_herdr_humanlayer_busy "default:whl:phl"
+      ' _ "$ROOT"
+  }
+  local idle_pid busy_pid child
+  "$lab/humanlayer" >"$lab/idle.out" 2>/dev/null & idle_pid=$!
+  local deadline=$((SECONDS + 3))
+  until [ -s "$lab/idle.out" ]; do
+    [ "$SECONDS" -lt "$deadline" ] || fail "the idle fixture never reported readiness"
+    sleep 0.05
+  done
+  herdr_busy_verdict "$idle_pid" \
+    && fail "a herdr pane whose TUI has no tool child must not read busy"
+  "$lab/humanlayer" tool >"$lab/busy.out" 2>/dev/null & busy_pid=$!
+  deadline=$((SECONDS + 3))
+  until [ -s "$lab/busy.out" ]; do
+    [ "$SECONDS" -lt "$deadline" ] || fail "the busy fixture never reported its tool child"
+    sleep 0.05
+  done
+  child=$(head -1 "$lab/busy.out")
+  deadline=$((SECONDS + 3))
+  until herdr_busy_verdict "$busy_pid"; do
+    [ "$SECONDS" -lt "$deadline" ] \
+      || { kill "$child" 2>/dev/null || true; fail "a running herdr tool call must read busy"; }
+    sleep 0.05
+  done
+  kill "$child" 2>/dev/null || true
+  kill "$idle_pid" 2>/dev/null || true
+  wait "$busy_pid" 2>/dev/null || true
+  pass "the herdr busy probe proves tool activity through the shared descendant walk"
+}
+test_humanlayer_herdr_busy_probe

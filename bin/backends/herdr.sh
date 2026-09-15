@@ -3419,6 +3419,44 @@ fm_backend_herdr_agent_status_raw() {  # <session> <pane_id>
 # mid-turn, issue #4115) reads `unknown`, never busy, so the recovery classifier
 # cannot report a shell-only pane as working. Only the busy case pays the extra
 # process read; idle and unknown are never trusted as busy by any consumer.
+# fm_backend_herdr_humanlayer_busy: busy evidence for a HumanLayer worker
+# pane, in the same shape as bin/backends/tmux.sh's
+# fm_backend_tmux_humanlayer_busy. The styled screen fold cannot distinguish
+# a running turn from a parked draft, so the process view decides: herdr's
+# recorded foreground process set reads `other` exactly when a non-shell,
+# non-harness process (the tool call's child) holds the pane's foreground
+# group, which only happens while the worker's tool call runs. The TUI alone
+# reads `agent` and proves nothing about the turn, so it is never busy.
+fm_backend_herdr_humanlayer_busy() {  # <target>
+  fm_backend_herdr_target_ready "$1" || return 1
+  [ "$(fm_backend_herdr_pane_process_state \
+    "$FM_BACKEND_HERDR_SESSION" "$FM_BACKEND_HERDR_PANE")" = other ]
+}
+
+# fm_backend_herdr_humanlayer_busy: busy evidence for a HumanLayer worker
+# pane, in the same shape as bin/backends/tmux.sh's
+# fm_backend_tmux_humanlayer_busy. The styled screen fold cannot distinguish
+# a running turn from a parked draft, so the process view decides. herdr's
+# `pane process-info` lists the pane's foreground processes by name (the TUI
+# is there in both states) but not the tool call's children, so the TUI's
+# pids feed the shared descendant walk over the real process table
+# (fm_humanlayer_processes_active): a running tool call makes its child
+# visible exactly while it runs, and pure model thinking has no child on any
+# backend, which stays unknown - the same partial coverage the grok/rovo/agy
+# arms accept.
+fm_backend_herdr_humanlayer_busy() {  # <target>
+  fm_backend_herdr_target_ready "$1" || return 1
+  local pids snapshot
+  pids=$(fm_backend_herdr_cli "$FM_BACKEND_HERDR_SESSION" pane process-info \
+    --pane "$FM_BACKEND_HERDR_PANE" 2>/dev/null \
+    | jq -r '.result.process_info.foreground_processes[]?
+      | select((.name // "") | ascii_downcase == "humanlayer") | .pid' 2>/dev/null) \
+    || return 1
+  [ -n "$pids" ] || return 1
+  snapshot=$(LC_ALL=C ps -axo pid=,ppid=,pgid=,stat=,comm= 2>/dev/null) || return 1
+  printf '%s\n' "$snapshot" | fm_humanlayer_processes_active "$pids"
+}
+
 fm_backend_herdr_busy_state() {  # <target>
   local verdict
   fm_backend_herdr_target_ready "$1" || { printf 'unknown'; return 0; }

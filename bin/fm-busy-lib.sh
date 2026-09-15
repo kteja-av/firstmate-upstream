@@ -1046,14 +1046,32 @@ fm_busy_classify() {  # <backend> <target> <harness> <id> <state-dir> [tail40]
         }
       fi
       out=$(printf '%s' "$tail40" | fm_humanlayer_screen_state)
-      if [ "$out" != idle ] && [ "$backend" = tmux ] \
-        && command -v fm_backend_source >/dev/null 2>&1 \
-        && fm_backend_source tmux \
-        && fm_backend_tmux_humanlayer_busy "$target"; then
-        printf 'busy humanlayer-process'
-      else
-        printf '%s humanlayer-anchor' "$out"
+      if [ "$out" != idle ] && command -v fm_backend_source >/dev/null 2>&1; then
+        # A non-idle screen alone cannot separate a running turn from a
+        # parked draft, so each backend that can observe the pane's
+        # foreground processes contributes its own busy proof: tmux walks
+        # the pane tty's process table for tool children of the TUI; herdr
+        # reads the same fact from its recorded foreground process set
+        # (`other` = a non-shell, non-harness process, which a humanlayer
+        # pane only shows while a tool call runs). Pure model thinking has
+        # no child process on either backend and stays unknown, the same
+        # partial coverage the grok/rovo/agy arms accept.
+        case "$backend" in
+          tmux)
+            if fm_backend_source tmux && fm_backend_tmux_humanlayer_busy "$target"; then
+              printf 'busy humanlayer-process'
+              return 0
+            fi
+            ;;
+          herdr)
+            if fm_backend_source herdr && fm_backend_herdr_humanlayer_busy "$target"; then
+              printf 'busy humanlayer-process'
+              return 0
+            fi
+            ;;
+        esac
       fi
+      printf '%s humanlayer-anchor' "$out"
       return 0
       ;;
   esac

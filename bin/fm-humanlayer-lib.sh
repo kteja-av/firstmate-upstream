@@ -3,11 +3,18 @@
 # Plain transcript-shaped input cannot prove completion. Only the styled
 # vendor completion row can retire an earlier prompt; a literal > inside a
 # multiline draft must not establish an empty composer.
+# The styled [Done] row renders in two verified vendor dialects and the fold
+# must accept both (each was captured live from a real settled turn):
+#   tmux `-e`:   ESC[38;2;34;197;94m[Done]ESC[39m complete
+#   herdr ansi:  ESC[0mESC[38;2;34;197;94m[Done]ESC[0m complete (rows also
+#                carry CR line endings and per-run attribute resets)
+# So the completion match tolerates leading SGR runs before the color code
+# and both ESC[39m and ESC[0m as the reset after the [Done] token.
 fm_humanlayer_screen_state() {
   awk '
     BEGIN { esc = sprintf("%c", 27) }
     {
-      completed = $0 ~ ("^" esc "\\[38;2;(34;197;94|239;68;68|234;179;8)m\\[Done\\]" esc "\\[39m")
+      completed = $0 ~ ("^(" esc "\\[[0-9;]*m)*" esc "\\[38;2;(34;197;94|239;68;68|234;179;8)m\\[Done\\]" esc "\\[(0|m|39)m")
       gsub(esc "\\[[0-9;]*m", "")
       if (completed) { pending = 0; composer = 0 }
       else if ($0 ~ /^>/) {
