@@ -14,6 +14,10 @@ fm_humanlayer_screen_state() {
   awk '
     BEGIN { esc = sprintf("%c", 27) }
     {
+      # herdr ANSI captures terminate every line with CR (verified live).
+      # Whether CR counts as [[:space:]] varies by awk implementation and
+      # locale, so strip it explicitly instead of relying on the class.
+      sub(/\r$/, "")
       completed = $0 ~ ("^(" esc "\\[[0-9;]*m)*" esc "\\[38;2;(34;197;94|239;68;68|234;179;8)m\\[Done\\]" esc "\\[(0|m|39)m")
       gsub(esc "\\[[0-9;]*m", "")
       if (NR == 1 && $0 ~ /^\[codex-provider\] using sse transport([[:space:]].*)?$/) startup = 1
@@ -42,7 +46,14 @@ fm_humanlayer_capture() {  # <backend> <target> [expected-label]
   fi
   case "$1" in
     tmux) tmux capture-pane -e -p -J -t "$2" -S - 2>/dev/null ;;
-    herdr) fm_backend_herdr_capture_ansi "$2" 200 "${3:-}" 2>/dev/null ;;
+    herdr)
+      out=$(fm_backend_herdr_capture_ansi "$2" 200 "${3:-}" 2>/dev/null) || return 1
+      # herdr's ANSI stream terminates every line with CR (verified live);
+      # strip it here so every consumer of this capture - including awk
+      # folds whose [[:space:]] handling of CR varies by implementation -
+      # sees LF rows.
+      printf '%s' "$out" | tr -d '\r'
+      ;;
     zellij) fm_backend_zellij_composer_capture "$2" "${3:-}" 2>/dev/null ;;
     *) fm_backend_capture "$1" "$2" 200 "${3:-}" ;;
   esac
@@ -53,6 +64,11 @@ fm_humanlayer_capture() {  # <backend> <target> [expected-label]
 fm_humanlayer_submission_seen() {
   FM_HL_SUBMIT_TEXT="$1" FM_HL_EMPTY_COMPOSER="${2:-}" awk '
     BEGIN { count = split(ENVIRON["FM_HL_SUBMIT_TEXT"], text, "\n") }
+    {
+      # herdr ANSI captures terminate lines with CR; strip explicitly rather
+      # than relying on implementation-specific [[:space:]] handling.
+      sub(/\r$/, "")
+    }
     submitted && remaining > 0 {
       if ($0 != text[count - remaining + 1]) submitted = 0
       remaining--
