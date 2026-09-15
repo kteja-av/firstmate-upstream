@@ -1771,7 +1771,9 @@ launch_template() {
   # not read a humanlayer worker as its launcher. No turn-end hook exists,
   # so nothing is armed and busy state is the pinned composer anchor
   # (bin/fm-busy-lib.sh).
-  humanlayer) printf '%s' 'env -u CLAUDECODE -u PI_CODING_AGENT -u GROK_AGENT -u FM_PI_HARNESS __HLBIN__ codelayer --provider codex __MODELFLAG____EFFORTFLAG__' ;;
+  # Discard the previous process display at launch, before the new composer
+  # exists; retained shell prompts must not become draft history for the new worker.
+  humanlayer) printf '%s' 'printf "\033[H\033[2J\033[3J"; env -u CLAUDECODE -u PI_CODING_AGENT -u GROK_AGENT -u FM_PI_HARNESS __HLBIN__ codelayer --provider codex __MODELFLAG____EFFORTFLAG__' ;;
   # grok (Grok Build TUI): a positional prompt starts the supervised interactive
   # session. --always-approve auto-approves every tool execution (verified: the
   # crewmate runs fully autonomously, no permission gate), which an unattended

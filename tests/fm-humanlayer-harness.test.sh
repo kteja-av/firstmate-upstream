@@ -448,6 +448,23 @@ test_humanlayer_launch_then_send_is_verified() {
   assert_not_contains "$launch" "__MODELFLAG__" "humanlayer launch left its model placeholder unsubstituted"
   assert_not_contains "$launch" "__EFFORTFLAG__" "humanlayer launch left its effort placeholder unsubstituted"
 
+  # Execute the generated launch in a retained terminal, as relaunch does.
+  # The fake worker exits immediately; its replacement composer is emitted
+  # after it so this checks terminal state, not launch-command spelling.
+  if command -v tmux >/dev/null 2>&1; then
+    local socket screen verdict
+    socket="hl-relaunch-$$"
+    printf 'printf "> stale shell prompt\\n"\nbash %q\nprintf ">\\n"\nsleep 10\n' \
+      "$CASE_DIR/launch.log" > "$CASE_DIR/relaunch.sh"
+    tmux -L "$socket" new-session -d -s regression "bash '$CASE_DIR/relaunch.sh'" \
+      || fail "could not start relaunch terminal"
+    sleep 1
+    screen=$(tmux -L "$socket" capture-pane -e -p -J -t regression -S -)
+    tmux -L "$socket" kill-server
+    verdict=$(printf '%s' "$screen" | fm_humanlayer_screen_state)
+    [ "$verdict" = idle ] || fail "replacement composer inherited prior-process draft history: $verdict"
+  fi
+
   brief_real="$(cd "$HOME_DIR/data/$id" && pwd -P)/launch-brief.md"
   pointer=$(cat "$CASE_DIR/pointer.log")
   [ "$pointer" = "Read the brief at $brief_real and follow it exactly." ] \
