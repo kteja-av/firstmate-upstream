@@ -1022,7 +1022,7 @@ test_humanlayer_direct_delivery() {
     dir=$(new_case "hl-send-$mode")
     add_task "$dir" t1 humanlayer
     alive_as "$dir" humanlayer
-    printf '> older prompt\n[Tool] bash command=old\n[Done] complete\n>\n' > "$dir/fake/pane"
+    printf '> older prompt\n[Tool] bash command=old\n\033[38;2;34;197;94m[Done]\033[39m complete\n>\n' > "$dir/fake/pane"
     case "$mode" in
       working) ;;
       busy) printf '[Tool] bash command=sleep 30\n' > "$dir/fake/pane" ;;
@@ -1039,6 +1039,10 @@ test_humanlayer_direct_delivery() {
     esac
     case "$mode" in
       busy|pending|continuation) [ ! -s "$dir/fake/literal" ] || fail "HumanLayer must not type into $mode input" ;;
+      swallow|enter-failed)
+        [ "$(cat "$dir/fake/literal")" = 'inspect delivery' ] || fail "HumanLayer must type the $mode submission"
+        grep -qx Enter "$dir/fake/keys" || fail "HumanLayer must attempt Enter for $mode delivery"
+        ;;
     esac
   done
   pass "HumanLayer direct steering confirms output and rejects pending or lost submissions"
