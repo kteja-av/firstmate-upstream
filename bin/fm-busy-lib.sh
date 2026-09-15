@@ -1049,20 +1049,20 @@ fm_busy_classify() {  # <backend> <target> <harness> <id> <state-dir> [tail40]
       out=$(printf '%s' "$tail40" | fm_humanlayer_screen_state)
       if [ "$out" != idle ] && command -v fm_backend_source >/dev/null 2>&1; then
         # A non-idle screen alone cannot separate a running turn from a
-        # parked draft, so each backend that can observe the pane's
-        # foreground processes contributes its own busy proof through the
-        # shared descendant walk. Backend helpers own how the foreground
-        # HumanLayer pids are obtained; tool children come from the system
-        # process table. Pure model thinking has no tool child and stays unknown.
+        # parked draft, so tmux proves busy from the pane tty's process
+        # table: tool children of the identified foreground HumanLayer
+        # worker. herdr deliberately has NO process probe: its pane
+        # process-info never surfaces a tool call's children and its agent
+        # registry does not register codelayer (both verified against herdr
+        # 0.8.0 and humanlayer 0.31.0; the descendant walk measured zero
+        # non-agent children over 60 samples of an actively-running
+        # multi-tool task), so busy on herdr stays unknown and supervision
+        # reads the worker's status log and turn-end events instead. Pure
+        # model thinking has no tool child on tmux either and stays unknown
+        # there, the same partial coverage the grok/rovo/agy arms accept.
         case "$backend" in
           tmux)
             if fm_backend_source tmux && fm_backend_tmux_humanlayer_busy "$target"; then
-              printf 'busy humanlayer-process'
-              return 0
-            fi
-            ;;
-          herdr)
-            if fm_backend_source herdr && fm_backend_herdr_humanlayer_busy "$target"; then
               printf 'busy humanlayer-process'
               return 0
             fi

@@ -3408,41 +3408,6 @@ fm_backend_herdr_agent_status_raw() {  # <session> <pane_id>
   printf '%s' "$out" | jq -r '.result.agent.agent_status // empty' 2>/dev/null
 }
 
-# fm_backend_herdr_humanlayer_busy: busy evidence for a HumanLayer worker
-# pane, in the same shape as bin/backends/tmux.sh's
-# fm_backend_tmux_humanlayer_busy. The styled screen fold cannot distinguish
-# a running turn from a parked draft, so the process view decides. herdr's
-# `pane process-info` lists the pane's foreground processes by name (the TUI
-# is there in both states) but not the tool call's children, so the TUI's
-# pids feed the shared descendant walk over the real process table
-# (fm_humanlayer_processes_active): a running tool call makes its child
-# visible exactly while it runs, and pure model thinking has no child on any
-# backend, which stays unknown - the same partial coverage the grok/rovo/agy
-# arms accept.
-fm_backend_herdr_humanlayer_busy() {  # <target>
-  fm_backend_herdr_target_ready "$1" || return 1
-  local pids snapshot
-  pids=$(fm_backend_herdr_cli "$FM_BACKEND_HERDR_SESSION" pane process-info \
-    --pane "$FM_BACKEND_HERDR_PANE" 2>/dev/null \
-    | jq -r '.result.process_info.foreground_processes[]?
-      | select((.name // "") | ascii_downcase == "humanlayer") | .pid' 2>/dev/null) \
-    || return 1
-  [ -n "$pids" ] || return 1
-  snapshot=$(LC_ALL=C ps -axo pid=,ppid=,pgid=,stat=,comm= 2>/dev/null) || return 1
-  printf '%s\n' "$snapshot" | fm_humanlayer_processes_active "$pids"
-}
-
-# fm_backend_herdr_busy_state: semantic busy state from herdr's native
-# agent-state detection (agent.get), the "first backend where fm_session_busy_state
-# gets real semantics" per the design report. See
-# fm_backend_herdr_classify_agent_status for the status->busy/idle/unknown
-# mapping.
-#
-# A `busy` verdict is proven at process level before it is reported: a
-# lingering `working` registration over a shell-only pane (an agent killed
-# mid-turn, issue #4115) reads `unknown`, never busy, so the recovery classifier
-# cannot report a shell-only pane as working. Only the busy case pays the extra
-# process read; idle and unknown are never trusted as busy by any consumer.
 fm_backend_herdr_busy_state() {  # <target>
   local verdict
   fm_backend_herdr_target_ready "$1" || { printf 'unknown'; return 0; }
