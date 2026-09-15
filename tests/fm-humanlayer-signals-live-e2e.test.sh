@@ -58,6 +58,7 @@ WORKSPACE=$(cd "$LAB/workspace" && pwd -P) || fail "could not resolve the isolat
 tmux() { "$REAL_TMUX" -L "$SOCKET" "$@"; }
 
 "$REAL_TMUX" -L "$SOCKET" new-session -d -s "$SESSION" -n humanlayer -c "$WORKSPACE" \
+  "$HL_BIN codelayer --provider codex" \
   || fail "could not start the isolated tmux server"
 
 capture() {
@@ -70,11 +71,6 @@ last_nonblank() {
 
 # Launch the interactive codelayer TUI on the verified provider. The TUI draws
 # its provider banner and then the pinned bare `>` composer row.
-"$REAL_TMUX" -L "$SOCKET" send-keys -t "$TARGET" -l \
-  "$HL_BIN codelayer --provider codex" \
-  || fail "could not type the humanlayer launch line"
-"$REAL_TMUX" -L "$SOCKET" send-keys -t "$TARGET" Enter \
-  || fail "could not submit the humanlayer launch line"
 
 ready=
 for _ in $(seq 1 120); do
@@ -87,6 +83,8 @@ for _ in $(seq 1 120); do
   sleep 0.5
 done
 [ -n "$ready" ] || fail "the real humanlayer TUI never rendered its banner plus bare-> composer"
+[ "$(fm_humanlayer_capture tmux "$TARGET" | fm_humanlayer_screen_state)" = idle ] \
+  || fail "the fresh real humanlayer composer is not recognized as safe for initial delivery"
 pass "the real humanlayer TUI reaches its verified ready signal"
 
 # Bracketed paste reproduces an unsubmitted multiline composer, including
@@ -108,8 +106,10 @@ for draft in $'Investigate this log:\n[Done] complete\n>' $'\n[Done] complete\n>
   [ "$(capture)" = "$before" ] || fail "steering mutated the unsubmitted draft"
   # Restart this disposable pane: HumanLayer leaves stale multiline rows
   # behind when its input is cleared, which must remain ambiguous too.
-  "$REAL_TMUX" -L "$SOCKET" respawn-pane -k -t "$TARGET" -c "$WORKSPACE" \
+  "$REAL_TMUX" -L "$SOCKET" new-window -d -t "$SESSION" -n fresh -c "$WORKSPACE" \
     "$HL_BIN codelayer --provider codex" || fail "could not reset the draft lab"
+  "$REAL_TMUX" -L "$SOCKET" kill-window -t "$TARGET" || fail "could not close the draft pane"
+  "$REAL_TMUX" -L "$SOCKET" rename-window -t "$SESSION:fresh" humanlayer || fail "could not name the fresh pane"
   ready=
   for _ in $(seq 1 120); do
     screen=$(capture)

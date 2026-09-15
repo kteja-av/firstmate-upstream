@@ -210,6 +210,13 @@ EOF
     verdict=$(printf '> Investigate this log:\n%s\n>\n\n' "$content" | fm_humanlayer_screen_state)
     [ "$verdict" = unknown ] || fail "a literal > continuation must remain unsafe: $content"
   done
+  local separator
+  for separator in '' $'\n' $'\n  \n'; do
+    verdict=$(printf '[codex-provider] using sse transport for model gpt-6-astra\ncodelayer - provider: codex, model: gpt-6-astra\n%s>\n' "$separator" | fm_humanlayer_screen_state)
+    [ "$verdict" = idle ] || fail "fresh provider banners with blank separators must read idle"
+    verdict=$(printf '[codex-provider] using sse transport for model gpt-6-astra\ncodelayer - provider: codex, model: gpt-6-astra\n%sdraft content\n>\n' "$separator" | fm_humanlayer_screen_state)
+    [ "$verdict" = unknown ] || fail "content between startup banners and composer must remain unsafe"
+  done
   local color
   for color in '34;197;94' '239;68;68' '234;179;8'; do
     verdict=$(printf '> prior prompt\n\033[38;2;%sm[Done]\033[39m complete\n>\n' "$color" | fm_humanlayer_screen_state)
