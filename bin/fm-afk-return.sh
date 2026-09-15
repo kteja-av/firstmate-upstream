@@ -224,13 +224,13 @@ write_gate() {  # <evidence-file> <blockers-file>
   window_epoch=$(gate_window_epoch)
   contract_epoch=$(gate_contract_epoch)
   {
-    printf 'schema\tfm-afk-return.v1\n'
-    printf 'started\t%s\n' "$started"
-    printf 'phase\tblocked\n'
-    [ -z "$window_epoch" ] || printf 'window\t%s\n' "$window_epoch"
-    [ -z "$contract_epoch" ] || printf 'contract\t%s\n' "$contract_epoch"
-    grep -Ev "^(window|contract)$(printf '\t')" "$evidence" 2>/dev/null || true
-    cat "$blockers" 2>/dev/null || true
+    printf 'schema\tfm-afk-return.v1\n' &&
+    printf 'started\t%s\n' "$started" &&
+    printf 'phase\tblocked\n' &&
+    { [ -z "$window_epoch" ] || printf 'window\t%s\n' "$window_epoch"; } &&
+    { [ -z "$contract_epoch" ] || printf 'contract\t%s\n' "$contract_epoch"; } &&
+    awk -F '\t' '$1 != "window" && $1 != "contract"' "$evidence" &&
+    cat "$blockers"
   } > "$pending" || { rm -f "$pending"; return 1; }
   mv "$pending" "$GATE"
 }

@@ -255,6 +255,54 @@ EOF
   pass "needs-decision remains reportable without masquerading as a firstmate-actionable blocker"
 }
 
+test_gate_write_failure_prevents_shutdown() {
+  local dir stage out rc
+  for stage in header evidence blockers; do
+    dir="$TMP_ROOT/gate-write-failure-$stage"
+    install_runner "$dir"
+    date +%s > "$dir/home/state/.afk"
+    touch "$dir/home/state/.last-watcher-beat"
+    cat > "$dir/fail-gate-write.sh" <<'SH'
+fail_gate_write() {
+  command cp "$FM_HOME/state/.afk-return-catchup" "$FM_HOME/expected-gate"
+  builtin printf 'partial gate'
+  return 1
+}
+printf() {
+  if [ "${FUNCNAME[1]:-}" = write_gate ] && [ "$FAIL_STAGE" = header ]; then
+    fail_gate_write
+    return 1
+  fi
+  builtin printf "$@"
+}
+awk() {
+  if [ "${FUNCNAME[1]:-}" = write_gate ] && [ "$FAIL_STAGE" = evidence ] && [ "${!#}" != "$FM_HOME/state/.afk-return-catchup" ]; then
+    fail_gate_write
+    return 1
+  fi
+  command awk "$@"
+}
+cat() {
+  if [ "${FUNCNAME[1]:-}" = write_gate ] && [ "$FAIL_STAGE" = blockers ]; then
+    fail_gate_write
+    return 1
+  fi
+  command cat "$@"
+}
+SH
+    rc=0
+    out=$(BASH_ENV="$dir/fail-gate-write.sh" FAIL_STAGE="$stage" run_return "$dir" begin) || rc=$?
+    [ "$rc" -eq 1 ] || fail "$stage gate write failure should refuse shutdown (rc=$rc): $out"
+    cmp -s "$dir/home/expected-gate" "$dir/home/state/.afk-return-catchup" || fail "$stage gate write failure replaced the previous gate"
+    [ -e "$dir/home/state/.afk" ] || fail "$stage gate write failure removed the away flag"
+    [ ! -e "$dir/home/stop.log" ] || fail "$stage gate write failure attempted shutdown"
+    out=$(run_return "$dir" check) || fail "$stage gate write retry failed: $out"
+    assert_contains "$out" 'GAP: the away daemon was not running at return' "$stage gate write retry lost the health gap"
+    [ ! -e "$dir/home/state/.afk-return-catchup" ] || fail "$stage gate write retry left catch-up gated"
+  done
+  pass "gate write failures preserve the previous gate and prevent shutdown"
+}
+
 test_staging_write_failure_preserves_catchup() {
   local dir stage out rc
   for stage in brief evidence; do
@@ -830,6 +878,7 @@ test_explicit_reclassification_requires_durable_reason
 test_captain_decision_does_not_masquerade_as_firstmate_blocker
 test_evidence_publication_failure_preserves_wake_for_redrain
 test_staging_write_failure_preserves_catchup
+test_gate_write_failure_prevents_shutdown
 test_away_reentry_refuses_pending_return_gate
 test_return_is_mode_agnostic_for_quiet_mode
 test_check_retries_recorded_terminal_teardown
