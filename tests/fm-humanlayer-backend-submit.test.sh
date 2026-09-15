@@ -5,7 +5,12 @@ set -eu
 . "$ROOT/bin/fm-task-inbox-lib.sh"
 
 TEST_TMP=$(fm_test_tmproot fm-humanlayer-backend-submit)
-fm_backend_source() { :; }
+fm_backend_source() {
+  if [ "$1" = herdr ]; then
+    fm_backend_herdr_send_literal() { literal_fixture "$@"; }
+    fm_backend_herdr_send_key() { key_fixture "$@"; }
+  fi
+}
 capture_fixture() {
   [ "$1" = endpoint ] && [ "$3" = worker-label ] || return 1
   [ "$capture_ok" = yes ] || return 1
@@ -48,10 +53,8 @@ key_fixture() {
     printf '> instruction\n[Tool] bash command=old\n' > "$TEST_TMP/response"
   fi
 }
-fm_backend_herdr_send_literal() { literal_fixture "$@"; }
 fm_backend_cmux_send_literal() { literal_fixture "$@"; }
 fm_backend_orca_send_literal() { literal_fixture "$@"; }
-fm_backend_herdr_send_key() { key_fixture "$@"; }
 fm_backend_cmux_send_key() { key_fixture "$@"; }
 fm_backend_orca_send_key() { key_fixture "$@"; }
 tmux() {
