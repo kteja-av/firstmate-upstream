@@ -2026,7 +2026,7 @@ A fresh directory showed no trust dialog in interactive or non-interactive runs,
 | Idle anchor | the bottom-most non-blank pane row is exactly the bare `>` composer, at session start and immediately after every settled turn |
 | Running turn | the anchor is replaced by the submitted prompt's echo row and streaming `[Tool]`/`[Tool Result]`/`[Assistant]` rows; no pinned busy footer or spinner row exists |
 | Semantic source | none; no hook surface, so `fm_busy_sources_for_harness` trusts nothing and nothing is armed or seeded |
-| Classification | the `humanlayer-anchor` arm of `bin/fm-busy-lib.sh`: last non-blank row exactly `>` is idle, any other non-blank capture is busy, a blank capture stays unknown |
+| Classification limit | captured `[Tool]` and `[Assistant]` rows can also be pending multiline input; the shared classifier therefore reports idle at the bare composer and unknown otherwise, never busy from these rows alone |
 | Multi-turn | context persists across composer submissions; a fresh steer after a settled turn ran with full history |
 | Interrupt | a single `Ctrl+C` mid-turn printed `[Done] Agent interrupted` and returned the bare `>` composer; `Escape` was a no-op mid-turn |
 | Exit | a single `Ctrl+C` at the idle composer exited the process; typed `/quit` and `/exit` reached the model as chat and did NOT exit |

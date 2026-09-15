@@ -54,7 +54,7 @@ WORKSPACE=$(cd "$LAB/workspace" && pwd -P) || fail "could not resolve the isolat
   || fail "could not start the isolated tmux server"
 
 capture() {
-  "$REAL_TMUX" -L "$SOCKET" capture-pane -p -t "$TARGET" -S -100 2>/dev/null || true
+  "$REAL_TMUX" -L "$SOCKET" capture-pane -p -J -t "$TARGET" -S - 2>/dev/null || true
 }
 
 last_nonblank() {
@@ -82,12 +82,8 @@ done
 [ -n "$ready" ] || fail "the real humanlayer TUI never rendered its banner plus bare-> composer"
 pass "the real humanlayer TUI reaches its verified ready signal"
 
-# The initial turn executes and its reply lands; the bare-> anchor must be
-# ABSENT while the turn is in flight, which is the adapter's busy verdict, and
-# must return the moment the turn settles. The computed-answer prompt (reply
-# with exactly 80235) keeps the awaited token out of the echoed launch line.
-"$REAL_TMUX" -L "$SOCKET" send-keys -t "$TARGET" -l \
-  "Add 12345 and 67890. Reply with exactly the sum and nothing else" \
+prompt="Add 12345 and 67890. Reply with exactly the sum and nothing else"
+"$REAL_TMUX" -L "$SOCKET" send-keys -t "$TARGET" -l "$prompt" \
   || fail "could not type the launch prompt"
 "$REAL_TMUX" -L "$SOCKET" send-keys -t "$TARGET" Enter \
   || fail "could not submit the launch prompt"
@@ -95,13 +91,11 @@ pass "the real humanlayer TUI reaches its verified ready signal"
 busy_live=
 for _ in $(seq 1 120); do
   screen=$(capture)
-  # The echo row or any streaming row replaces the anchor: the delivery guard
-  # reads busy through the same verified anchor the supervisor folds.
-  printf '%s' "$screen" | fm_busy_lines_match humanlayer && { busy_live=1; break; }
+  printf '%s' "$screen" | fm_humanlayer_submission_seen "$prompt" && { busy_live=1; break; }
   sleep 0.5
 done
-[ -n "$busy_live" ] || fail "the real humanlayer turn in flight never read busy through the anchor"
-pass "the real humanlayer turn in flight reads busy through the anchor guard"
+[ -n "$busy_live" ] || fail "the real humanlayer turn never produced submission evidence"
+pass "the real humanlayer turn produces submission evidence"
 
 idle_settled=
 for _ in $(seq 1 240); do
@@ -122,18 +116,20 @@ pass "the settled humanlayer tail reads idle through the anchor fold"
 # exactly one Ctrl+C - the adapter's verified interrupt key - and wait for the
 # `[Done] Agent interrupted` row it prints; a busy anchor that merely
 # disappears is not cancellation and no further key is sent.
-"$REAL_TMUX" -L "$SOCKET" send-keys -t "$TARGET" -l \
-  "Run: sleep 90; then reply LATE-GUARD" \
+prompt="Run: sleep 90; then reply LATE-GUARD"
+"$REAL_TMUX" -L "$SOCKET" send-keys -t "$TARGET" -l "$prompt" \
   || fail "could not type the long humanlayer prompt"
 "$REAL_TMUX" -L "$SOCKET" send-keys -t "$TARGET" Enter \
   || fail "could not submit the long humanlayer prompt"
 for _ in $(seq 1 100); do
   screen=$(capture)
-  printf '%s' "$screen" | fm_busy_lines_match humanlayer && break
+  printf '%s' "$screen" | fm_humanlayer_submission_seen "$prompt" && break
   sleep 0.5
 done
-[ "$(last_nonblank "$screen")" = '>' ] \
-  && fail "the long humanlayer turn never showed its busy anchor"
+printf '%s' "$screen" | fm_humanlayer_submission_seen "$prompt" \
+  || fail "the long humanlayer turn never produced submission evidence"
+[ "$(last_nonblank "$screen")" != '>' ] \
+  || fail "the long humanlayer turn already settled before interruption"
 "$REAL_TMUX" -L "$SOCKET" send-keys -t "$TARGET" C-c \
   || fail "could not send Ctrl+C to the real humanlayer turn"
 cancelled=

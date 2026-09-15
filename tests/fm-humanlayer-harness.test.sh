@@ -195,9 +195,8 @@ EOF
   [ "${verdict%% *}" = idle ] || fail "a bare-> bottom row must classify idle, got '$verdict'"
   [ "${verdict#* }" = humanlayer-anchor ] || fail "the idle verdict must name its humanlayer-anchor source, got '$verdict'"
 
-  # Busy: a streaming tool row is the last rendered row mid-turn.
   verdict=$(fm_busy_classify tmux 'win:0' humanlayer hl-test "$HL_STATE" "$tail_tool")
-  [ "${verdict%% *}" = busy ] || fail "a mid-turn tool row must classify busy, got '$verdict'"
+  [ "${verdict%% *}" = unknown ] || fail "a tool-shaped row without input provenance must stay unknown, got '$verdict'"
 
   verdict=$(fm_busy_classify tmux 'win:0' humanlayer hl-test "$HL_STATE" "$tail_echo")
   [ "${verdict%% *}" = unknown ] || fail "a prompt echo without output must stay unknown, got '$verdict'"
@@ -217,21 +216,20 @@ test_humanlayer_anchor_tolerates_trailing_whitespace_only() {
 
 # --- delivery guard ---------------------------------------------------------
 
-test_humanlayer_delivery_guard_requires_output() {
+test_humanlayer_delivery_guard_refuses_ambiguous_output() {
   local rc
   # Idle tail (bare `>` last) must NOT acknowledge a submit as busy.
   printf '[Done] complete\n\n>\n' | fm_busy_lines_match humanlayer \
     && fail "an idle bare-gt tail must not read busy through the humanlayer delivery guard"
-  # A running turn's tail must.
   printf '> Run: sleep 30\n[Tool] bash command=sleep 30\n' | fm_busy_lines_match humanlayer \
-    || fail "a mid-turn tail must read busy through the humanlayer delivery guard"
+    && fail "a pasted tool-shaped tail must not authorize a busy verdict"
   printf '> Read the brief and follow it exactly.\n' | fm_busy_lines_match humanlayer \
     && fail "a typed composer tail must not read busy through the humanlayer delivery guard"
   # The explicit FM_BUSY_REGEX override still wins over the anchor arm.
   rc=0
   printf '>\n' | FM_BUSY_REGEX='plugh' fm_busy_lines_match humanlayer || rc=$?
   [ "$rc" -ne 0 ] || fail "the FM_BUSY_REGEX override must take precedence over the humanlayer anchor"
-  pass "composer-lib: the humanlayer delivery guard requires output and honors FM_BUSY_REGEX"
+  pass "composer-lib: the humanlayer delivery guard refuses ambiguous output and honors FM_BUSY_REGEX"
 }
 
 # --- spawn ------------------------------------------------------------------
@@ -259,8 +257,14 @@ fake_screen() {
     pointer-typed)
       printf '[codex-provider] using sse transport for model gpt-6-astra\ncodelayer - provider: codex, model: gpt-6-astra\n> Read the brief and follow it\n'
       ;;
+    scrolled)
+      printf '[Tool] bash command=running\n'
+      ;;
     delivered)
       printf '[codex-provider] using sse transport for model gpt-6-astra\n> Read the brief at %s and follow it exactly.\n[Tool] bash call_id=call_x agent=root depth=0 command=echo started\n' "$FM_FAKE_BRIEF_REAL"
+      if [ -n "${FM_FAKE_HL_SCROLL:-}" ]; then
+        for ((row=0; row<500; row++)); do printf 'tool output %s\n' "$row"; done
+      fi
       ;;
     *)
       printf 'shell starting\n$ \n'
@@ -324,6 +328,15 @@ case "${1:-}" in
       esac
       case "$arg" in -S|-E) prev=$arg ;; *) prev= ;; esac
     done
+    if [ "$state" = delivered ] && [ -n "${FM_FAKE_HL_SCROLL:-}" ]; then
+      if [ "$start" = - ]; then
+        fake_screen
+      else
+        fake_screen | tail -n "${start#-}"
+      fi
+      if [ "$FM_FAKE_HL_SCROLL" = after ]; then printf 'scrolled\n' > "$FM_FAKE_HL_STATE"; fi
+      exit 0
+    fi
     case "$start:$end" in
       *[!0-9:]*|'':*|*:'') fake_screen ;;
       *) fake_screen | awk -v start="$start" -v end="$end" \
@@ -386,6 +399,7 @@ run_spawn() {
     FM_FAKE_HL_STATE="$case_dir/hl.state" \
     FM_FAKE_TMUX_CALL_LOG="$case_dir/tmux-calls.log" \
     FM_FAKE_BRIEF_REAL="$(cd "$home/data/$id" && pwd -P)/launch-brief.md" \
+    FM_FAKE_HL_SCROLL="${FM_FAKE_HL_SCROLL:-}" \
     FM_FAKE_HL_READY="${FM_FAKE_HL_READY:-yes}" \
     FM_FAKE_HL_DELIVERY="${FM_FAKE_HL_DELIVERY:-yes}" \
     FM_HUMANLAYER_READY_POLLS=3 FM_HUMANLAYER_DELIVERY_POLLS=3 FM_HUMANLAYER_POLL_INTERVAL=0 \
@@ -556,7 +570,7 @@ test_humanlayer_structural_ancestor_outranks_a_retained_marker
 test_humanlayer_control_tables
 test_humanlayer_anchor_classifies_idle_busy_unknown
 test_humanlayer_anchor_tolerates_trailing_whitespace_only
-test_humanlayer_delivery_guard_requires_output
+test_humanlayer_delivery_guard_refuses_ambiguous_output
 test_humanlayer_launch_then_send_is_verified
 test_humanlayer_effort_max_is_recorded_but_omitted
 test_humanlayer_effort_xhigh_maps_to_thinking
@@ -566,3 +580,21 @@ test_humanlayer_missing_binary_refuses_before_pane_creation
 test_humanlayer_secondmate_launch_is_refused
 
 FM_FAKE_HL_DELIVERY=swallowed test_humanlayer_unconfirmed_delivery_refuses_and_cleans_up
+
+test_humanlayer_scrolling_delivery() {
+  local mode id rec out rc
+  for mode in before after; do
+    id="hl-scroll-$mode-$$"
+    rec=$(make_spawn_case "scroll-$mode" "$id")
+    read_spawn_record "$rec"
+    rc=0
+    out=$(FM_FAKE_HL_SCROLL="$mode" run_spawn \
+      "$CASE_DIR" "$HOME_DIR" "$PROJ_DIR" "$WT_DIR" "$FAKEBIN_DIR" "$id") || rc=$?
+    expect_code 0 "$rc" "HumanLayer must survive scrolling $mode confirmation: $out"
+    if grep -q 'kill-window' "$CASE_DIR/tmux-calls.log"; then
+      fail "scrolling output must not tear down the working endpoint"
+    fi
+  done
+  pass "HumanLayer retains delivery evidence across scrolling and honors confirmed submissions"
+}
+test_humanlayer_scrolling_delivery

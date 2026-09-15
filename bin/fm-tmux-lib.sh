@@ -256,7 +256,7 @@ fm_tmux_submit_enter_core() {  # <target> <retries> <enter-sleep> [baseline-idle
     if [ "$harness" = humanlayer ]; then
       j=0
       while [ "$j" -lt "$retries" ]; do
-        screen=$(tmux capture-pane -p -J -t "$target" -S -120 2>/dev/null) || screen=
+        screen=$(tmux capture-pane -p -J -t "$target" -S - 2>/dev/null) || screen=
         if [ "$baseline_idle" = 1 ] && [ -n "$text" ] && [ "$screen" != "$baseline_screen" ] \
           && printf '%s' "$screen" | fm_humanlayer_submission_seen "$text"; then
           printf 'empty'
@@ -309,7 +309,7 @@ fm_tmux_submit_core() {  # <target> <text> <retries> <enter-sleep> <settle> [exp
   # busy before the text lands can turn "busy" for reasons unrelated to our
   # Enter, so only a clean idle-to-busy transition may confirm a submit.
   if [ "$harness" = humanlayer ]; then
-    baseline_screen=$(tmux capture-pane -p -J -t "$target" -S -120 2>/dev/null) || {
+    baseline_screen=$(tmux capture-pane -p -J -t "$target" -S - 2>/dev/null) || {
       printf 'unknown'
       return 0
     }

@@ -3481,7 +3481,7 @@ agy_spawn_fail() {  # <detail>
 
 humanlayer_capture() {
   if [ "$BACKEND" = tmux ]; then
-    tmux capture-pane -p -J -t "$T" -S -120 2>/dev/null || true
+    tmux capture-pane -p -J -t "$T" -S - 2>/dev/null || true
   else
     fm_backend_capture "$BACKEND" "$T" 120 "$W" 2>/dev/null || true
   fi
@@ -4531,7 +4531,7 @@ if [ "$HARNESS" = humanlayer ]; then
     humanlayer_spawn_fail "humanlayer brief pointer could not be submitted into window $T"
     exit 1
   fi
-  if ! humanlayer_wait_for_delivery; then
+  if [ "$HUMANLAYER_SUBMIT_VERDICT" != empty ] && ! humanlayer_wait_for_delivery; then
     humanlayer_spawn_fail "humanlayer brief pointer delivery was not confirmed in window $T"
     exit 1
   fi

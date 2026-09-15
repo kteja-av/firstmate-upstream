@@ -126,3 +126,6 @@ The empirical basis for each adapter's value is the `harness-adapters` skill's v
 - `tests/fm-control.test.sh` - the adapter contract for its verified-harness lane (adapters outside the lane pin their control mechanics in their own harness suites), the backend capability matrix, exact-id scoping, the closed verb list, the busy, idle, dead, and idempotent lifecycle cases, and marker non-regression, all against a stubbed session provider.
 - `tests/fm-control-relaunch.test.sh` - the relaunch transaction: identity preservation, harness switching, the progress note, checkpoint refusals, and rollback after a failed launch.
 - `tests/fm-control-herdr-smoke.test.sh` - the second state-verified backend against the real herdr binary, on an isolated throwaway lab session.
+
+HumanLayer interruption requires a busy verdict from an independent state source; plain terminal text cannot authorize Ctrl+C because pasted log lines are indistinguishable from running output.
+On tmux, wait for the idle composer before exit or relaunch; interruption is refused while state remains unknown.

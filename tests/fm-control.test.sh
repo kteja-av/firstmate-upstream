@@ -949,22 +949,25 @@ test_humanlayer_lifecycle() {
   [ "$rc" -ne 0 ] || fail "idle HumanLayer interrupt must refuse"
   [ ! -s "$dir/fake/keys" ] || fail "idle interrupt must send no key"
   [ "$(cat "$dir/fake/command")" = humanlayer ] || fail "idle worker must survive"
-  printf '[Tool] bash command=old\n[Done] complete\n> Read the new doorbell\nwith wrapped pending text\n' > "$dir/fake/pane"
-  out=$(run_control "$dir" t1 interrupt); rc=$?
-  [ "$rc" -ne 0 ] || fail "pending HumanLayer interrupt must refuse"
-  [ ! -s "$dir/fake/keys" ] || fail "pending interrupt must send no key"
-  [ "$(cat "$dir/fake/command")" = humanlayer ] || fail "pending worker must survive"
+  local pending
+  for pending in $'> Investigate this log:\n[Tool] bash command=sleep 30' \
+    $'> Investigate this log:\n[Assistant] example' \
+    $'> Investigate this log:\nwrapped input\n[Tool] bash command=sleep 30'; do
+    printf '%s\n' "$pending" > "$dir/fake/pane"
+    out=$(run_control "$dir" t1 interrupt); rc=$?
+    [ "$rc" -ne 0 ] || fail "pending HumanLayer interrupt must refuse"
+    [ ! -s "$dir/fake/keys" ] || fail "pending interrupt must send no key"
+    [ "$(cat "$dir/fake/command")" = humanlayer ] || fail "pending worker must survive"
+  done
   printf '[Tool] bash command=sleep 30\n' > "$dir/fake/pane"
   out=$(run_control "$dir" t1 exit); rc=$?
-  expect_code 0 "$rc" "HumanLayer exit must wait for cancellation: $out"
-  [ "$(keys_sent "$dir")" = $'C-c\nC-c' ] || fail "busy exit must send two keys"
-  alive_as "$dir" humanlayer
-  : > "$dir/fake/keys"
-  : > "$dir/fake/hl-stuck"
-  printf '[Tool] bash command=sleep 30\n' > "$dir/fake/pane"
+  [ "$rc" -ne 0 ] || fail "ambiguous HumanLayer output must refuse exit"
+  [ ! -s "$dir/fake/keys" ] || fail "ambiguous output must not authorize Ctrl+C"
+  : > "$dir/fake/hl-settling"
   out=$(run_control "$dir" t1 exit); rc=$?
-  [ "$rc" -ne 0 ] || fail "unsettled cancellation must refuse exit"
-  [ "$(keys_sent "$dir")" = C-c ] || fail "unsettled cancellation must send only one key"
+  expect_code 0 "$rc" "HumanLayer exit must wait for idle: $out"
+  [ "$(keys_sent "$dir")" = C-c ] || fail "settled exit must send one key"
+
   pass "HumanLayer refuses idle interruption and waits for idle before exiting"
 }
 test_humanlayer_lifecycle

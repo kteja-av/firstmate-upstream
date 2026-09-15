@@ -5,7 +5,6 @@ fm_humanlayer_screen_state() {
     BEGIN { state = "unknown" }
     /^>[[:space:]]*$/ { state = "idle"; next }
     /^>/ { state = "unknown"; next }
-    /^\[(Tool|Assistant)\]/ { state = "busy"; next }
     /^\[Done\]/ { state = "unknown"; next }
     /[^[:space:]]/ && state == "idle" { state = "unknown" }
     END { print state }

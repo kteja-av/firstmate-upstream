@@ -381,8 +381,7 @@ fm_busy_lines_match() {  # [harness]
   if [ -n "${FM_BUSY_REGEX:-}" ]; then
     regex=$FM_BUSY_REGEX
   elif [ "$harness" = humanlayer ]; then
-    [ "$(printf '%s' "$lines" | fm_humanlayer_screen_state)" = busy ]
-    return
+    return 1
   else
     case "$harness" in
       claude) regex=$FM_DELIVERY_CLAUDE_BUSY_REGEX_DEFAULT ;;
