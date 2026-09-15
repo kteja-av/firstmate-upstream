@@ -19,12 +19,12 @@ fm_humanlayer_screen_state() {
       if (NR == 1 && $0 ~ /^\[codex-provider\] using sse transport([[:space:]].*)?$/) startup = 1
       if (NR == 2 && startup == 1 && $0 ~ /^codelayer - provider: [^,[:space:]]+, model: [^[:space:]]+[[:space:]]*$/) startup = 2
       if (NR == 3 && startup == 2 && $0 ~ /^>[[:space:]]*$/) pending = 0
-      if (completed) { pending = 0; composer = 0 }
+      if (completed) { pending = 0; composer = 0; settled = 1 }
       else if ($0 ~ /^>/) {
         if (composer) pending = 1
         composer = 1
         if ($0 !~ /^>[[:space:]]*$/) pending = 1
-      } else if ($0 ~ /[^[:space:]]/) pending = 1
+      } else if ((!settled || composer) && $0 ~ /[^[:space:]]/) pending = 1
       if ($0 ~ /[^[:space:]]/) last = $0
     }
     END { print !pending && last ~ /^>[[:space:]]*$/ ? "idle" : "unknown" }

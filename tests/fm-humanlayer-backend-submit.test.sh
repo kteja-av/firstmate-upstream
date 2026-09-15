@@ -93,3 +93,32 @@ for backend in tmux herdr cmux orca zellij; do
   done
   pass "$backend accepts only the top-anchored fresh-launch banner and empty composer"
 done
+
+
+footer=$'  Model            Input   Output     Cost             Context\n  gpt-6-astra      5,534        13   ~$0.06  5,542/258,400 (2%)'
+for completion in $'\033[38;2;34;197;94m[Done]\033[39m complete' $'\033[0m\033[38;2;34;197;94m[Done]\033[0m complete\r'; do
+  for backend in tmux herdr cmux orca zellij; do
+    capture_ok=yes
+    settled_screen=$'> previous prompt\n'"$completion"$'\n'"$footer"
+    fixture_screen="$settled_screen"$'\n>\n'
+    submissions=0
+    fm_backend_send_text_submit "$backend" endpoint instruction 1 0 0 worker-label humanlayer >/dev/null \
+      || fail "$backend must accept a completed turn with its usage footer"
+    [ "$submissions" = 1 ] || fail "$backend must submit once after the usage footer"
+    fm_task_inbox_ring "$backend" endpoint record worker-label humanlayer \
+      || fail "$backend inbox must accept a settled usage footer"
+    for fixture_screen in "$settled_screen" "$settled_screen"$'\n> draft\n>' "$settled_screen"$'\n>\n>' "$settled_screen"$'\n>\n'"$footer"$'\n>' $'> draft\n[Done] complete\n'"$footer"$'\n>' "$footer"$'\n>'; do
+      submissions=0
+      rm -f "$TEST_TMP/submitted"
+      if fm_backend_send_text_submit "$backend" endpoint instruction 1 0 0 worker-label humanlayer >/dev/null; then
+        fail "$backend must not accept usage-shaped draft content or missing composer"
+      fi
+      [ "$submissions" = 0 ] || fail "$backend must preserve usage-shaped draft content"
+      if fm_task_inbox_ring "$backend" endpoint record worker-label humanlayer; then
+        fail "$backend inbox must defer usage-shaped draft content"
+      fi
+      [ ! -e "$TEST_TMP/submitted" ] || fail "$backend inbox must not submit usage-shaped draft content"
+    done
+    pass "$backend preserves completion through usage furniture and rejects new drafts"
+  done
+done
