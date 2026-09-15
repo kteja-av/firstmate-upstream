@@ -67,10 +67,9 @@
 # lives outside the TUI path firstmate drives, see references/harness/rovo.md;
 # agy 1.2.0 exposes no hook surface at all, see references/harness/agy.md);
 # each is scoped to its own harness= and can never classify another adapter.
-# HumanLayer's anchor is the one rendered classification since: it has the
-# same absent hook surface, and its idle anchor (the pinned bare `>`
-# composer row) is verified in the reference rather than a free-floating
-# output word, so it cannot false-busy on echoed worker output. The delivery
+# HumanLayer also lacks hooks; fm-humanlayer-lib.sh owns its conservative
+# idle-screen classifier. Rendered text cannot prove HumanLayer busy;
+# only the tmux process-activity fallback can supply that verdict. The delivery
 # guards in bin/fm-composer-lib.sh match rendered footers for submit
 # acknowledgement and away-mode supervisor injection only; neither is a
 # recorded worker state source.

@@ -299,8 +299,8 @@
 # launch flag that carries a prompt (--prompt runs non-interactively and
 # exits at turn end), so it launches BARE exactly like kimi and rovo and
 # receives an absolute brief pointer only after a TUI readiness gate, then a
-# delivery-confirmation gate. Its busy state is the pinned bare-`>` composer
-# anchor (bin/fm-busy-lib.sh), and it is crewmate/scout only and is refused
+# delivery-confirmation gate. bin/fm-busy-lib.sh owns its state classification,
+# and it is crewmate/scout only and is refused
 # for --secondmate, like muse, gemini, and agy.
 # rovo installs no hook either - its eventHooks fire at tool granularity only,
 # never turn-end - so it carries no busy-source wiring at all and no turn-end
@@ -1769,8 +1769,7 @@ launch_template() {
   # clear an inherited CLAUDECODE/PI_CODING_AGENT (verified in the
   # environment of a live 0.31.0 tool subprocess), so bin/fm-harness.sh must
   # not read a humanlayer worker as its launcher. No turn-end hook exists,
-  # so nothing is armed and busy state is the pinned composer anchor
-  # (bin/fm-busy-lib.sh).
+  # so nothing is armed; bin/fm-busy-lib.sh owns its state classification.
   # Discard the previous process display at launch, before the new composer
   # exists; retained shell prompts must not become draft history for the new worker.
   humanlayer) printf '%s' 'printf "\033[H\033[2J\033[3J"; env -u CLAUDECODE -u PI_CODING_AGENT -u GROK_AGENT -u FM_PI_HARNESS __HLBIN__ codelayer --provider codex __MODELFLAG____EFFORTFLAG__' ;;
@@ -3735,8 +3734,8 @@ if [ "$KIND" != secondmate ]; then
   # adapter with a verified semantic source. The launch brief sent below IS a
   # submitted turn, so the seed record is busy/fm-spawn. The minted gen is
   # embedded into each adapter's wiring so an event from a superseded
-  # incarnation is rejected as stale. Grok, rovo, and humanlayer stay on
-  # their isolated rendered-tail fallbacks and standalone Kimi stays unknown
+  # incarnation is rejected as stale. Grok, rovo, and humanlayer use their
+  # classifier-only sources and standalone Kimi stays unknown
   # until fm_busy_kimi_verified opens, so none of the four is armed here.
   # Gemini IS armed: its BeforeAgent / AfterAgent / SessionEnd hooks are a
   # verified open-close pair.
