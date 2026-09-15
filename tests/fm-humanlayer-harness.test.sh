@@ -307,7 +307,7 @@ case "${1:-}" in
           pointer-typed)
             if [ "${FM_FAKE_HL_DELIVERY:-yes}" = yes ]; then
               printf 'delivered\n' > "$FM_FAKE_HL_STATE"
-            else
+            elif [ "${FM_FAKE_HL_DELIVERY:-yes}" != swallowed ]; then
               printf 'ready\n' > "$FM_FAKE_HL_STATE"
             fi
             ;;
@@ -487,10 +487,10 @@ test_humanlayer_never_ready_refuses_and_cleans_up() {
 test_humanlayer_unconfirmed_delivery_refuses_and_cleans_up() {
   local id rec out rc
   id="hl-nodelivery-z5-$$"
-  rec=$(make_spawn_case nodelivery "$id")
+  rec=$(make_spawn_case "nodelivery-${FM_FAKE_HL_DELIVERY:-no}" "$id")
   read_spawn_record "$rec"
   rc=0
-  out=$(FM_FAKE_HL_DELIVERY=no run_spawn \
+  out=$(FM_FAKE_HL_DELIVERY=${FM_FAKE_HL_DELIVERY:-no} run_spawn \
     "$CASE_DIR" "$HOME_DIR" "$PROJ_DIR" "$WT_DIR" "$FAKEBIN_DIR" "$id") || rc=$?
   [ "$rc" -ne 0 ] || fail "an unconfirmed humanlayer brief delivery must fail the spawn"
   assert_contains "$out" "delivery was not confirmed" \
@@ -565,3 +565,5 @@ test_humanlayer_never_ready_refuses_and_cleans_up
 test_humanlayer_unconfirmed_delivery_refuses_and_cleans_up
 test_humanlayer_missing_binary_refuses_before_pane_creation
 test_humanlayer_secondmate_launch_is_refused
+
+FM_FAKE_HL_DELIVERY=swallowed test_humanlayer_unconfirmed_delivery_refuses_and_cleans_up

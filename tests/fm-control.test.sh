@@ -103,6 +103,13 @@ case "${1:-}" in
       esac
     else
       printf '%s\n' "$payload" >> "$D/keys"
+      if [ "$payload" = C-c ] && [ "$(cat "$D/command")" = humanlayer ]; then
+        if [ "$(cat "$D/pane")" = '>' ]; then
+          printf 'zsh' > "$D/command"
+        else
+          : > "$D/hl-settling"
+        fi
+      fi
       if [ -n "${FM_FAKE_INTERRUPT_STOPS_AGENT:-}" ] \
          && { [ "$payload" = Escape ] || [ "$payload" = C-c ]; }; then
         printf 'zsh' > "$D/command"
@@ -137,6 +144,10 @@ SH
   chmod +x "$fb/tmux"
   cat > "$fb/sleep" <<'SH'
 #!/usr/bin/env bash
+if [ -e "$FM_FAKE_DIR/hl-settling" ] && [ ! -e "$FM_FAKE_DIR/hl-stuck" ]; then
+  printf '>\n' > "$FM_FAKE_DIR/pane"
+  rm "$FM_FAKE_DIR/hl-settling"
+fi
 if [ -n "${FM_FAKE_MUSE_DISAPPEAR_BEFORE_ACK:-}" ] \
    && [ -e "$FM_FAKE_DIR/muse-ack-pending" ]; then
   rm -f "$FM_FAKE_DIR/muse-ack-pending"
@@ -914,3 +925,28 @@ test_grok_interrupt_without_acknowledgement_reports_unconfirmed
 test_grok_idle_footer_does_not_confirm_cancellation
 test_secondmate_control_command_carries_no_marker
 test_fm_send_still_marks_the_same_secondmate_task
+
+test_humanlayer_lifecycle() {
+  local dir out rc
+  dir=$(new_case hl-idle)
+  add_task "$dir" t1 humanlayer
+  alive_as "$dir" humanlayer
+  printf '>\n' > "$dir/fake/pane"
+  out=$(run_control "$dir" t1 interrupt); rc=$?
+  [ "$rc" -ne 0 ] || fail "idle HumanLayer interrupt must refuse"
+  [ ! -s "$dir/fake/keys" ] || fail "idle interrupt must send no key"
+  [ "$(cat "$dir/fake/command")" = humanlayer ] || fail "idle worker must survive"
+  printf '[Tool] bash command=sleep 30\n' > "$dir/fake/pane"
+  out=$(run_control "$dir" t1 exit); rc=$?
+  expect_code 0 "$rc" "HumanLayer exit must wait for cancellation: $out"
+  [ "$(keys_sent "$dir")" = $'C-c\nC-c' ] || fail "busy exit must send two keys"
+  alive_as "$dir" humanlayer
+  : > "$dir/fake/keys"
+  : > "$dir/fake/hl-stuck"
+  printf '[Tool] bash command=sleep 30\n' > "$dir/fake/pane"
+  out=$(run_control "$dir" t1 exit); rc=$?
+  [ "$rc" -ne 0 ] || fail "unsettled cancellation must refuse exit"
+  [ "$(keys_sent "$dir")" = C-c ] || fail "unsettled cancellation must send only one key"
+  pass "HumanLayer refuses idle interruption and waits for idle before exiting"
+}
+test_humanlayer_lifecycle

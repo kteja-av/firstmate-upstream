@@ -365,6 +365,12 @@ send_interrupt_keys() {
     || die "harness $HARNESS interrupts with $key, which the $BACKEND backend cannot deliver; refusing to send a different key"
   [ -z "$clear" ] || fm_control_backend_supports_key "$BACKEND" "$clear" \
     || die "harness $HARNESS needs $clear to clear its composer after an interrupt, which the $BACKEND backend cannot deliver; refusing to leave the cancelled prompt where the next submitted line would concatenate onto it"
+  if [ "$HARNESS" = humanlayer ]; then
+    case "$(busy_verdict)" in
+      busy*) ;;
+      *) die "task $ID is not proven busy; refusing HumanLayer Ctrl+C because it exits an idle worker" ;;
+    esac
+  fi
   while [ "$i" -lt "$repeat" ]; do
     fm_backend_send_key "$BACKEND" "$T" "$key" "$LABEL" \
       || die "interrupt key $key was not delivered to task $ID on $BACKEND"
@@ -488,6 +494,26 @@ do_exit() {
   if key=$(fm_control_exit_key "$HARNESS"); then
     fm_control_backend_supports_key "$BACKEND" "$key" \
       || die "harness $HARNESS exits via the $key key, which the $BACKEND backend cannot deliver; refusing to send a different key"
+    local elapsed=0
+    while :; do
+      state=$(agent_state)
+      case "$state" in
+        dead)
+          retire_busy_incarnation
+          printf 'stopped'
+          return 0
+          ;;
+        alive) ;;
+        *) die "task $ID's agent state is '$state' while waiting for its idle composer" ;;
+      esac
+      case "$(busy_verdict)" in
+        idle\ humanlayer-anchor) break ;;
+      esac
+      awk -v e="$elapsed" -v t="$SETTLE_WAIT" 'BEGIN{exit !(e < t)}' \
+        || die "task $ID did not reach its verified idle composer; refusing the exit key"
+      sleep "$POLL"
+      elapsed=$(awk -v e="$elapsed" -v p="$POLL" 'BEGIN{printf "%.3f", e + p}')
+    done
     fm_backend_send_key "$BACKEND" "$T" "$key" "$LABEL" \
       || die "the exit key $key could not be delivered to task $ID on $BACKEND"
   else

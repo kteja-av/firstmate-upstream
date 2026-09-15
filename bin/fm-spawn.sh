@@ -3479,15 +3479,6 @@ agy_spawn_fail() {  # <detail>
   rovo_endpoint_cleanup
 }
 
-# humanlayer carries the kimi/rovo launch-then-confirm shape: launch bare,
-# wait for the TUI's verified ready signal, submit an absolute brief pointer
-# through the `>` composer, then require positive proof the pointer was
-# accepted before the spawn reports success. Ready is the provider banner
-# plus the pinned bare-`>` composer row as the bottom-most non-blank row
-# (verified live, humanlayer 0.31.0); delivery is the busy verdict through
-# the same verified anchor the supervisor reads (bin/fm-busy-lib.sh's
-# humanlayer-anchor): the echo row or any streaming row has replaced the
-# bare `>` idle anchor.
 humanlayer_capture() {
   fm_backend_capture "$BACKEND" "$T" 120 "$W" 2>/dev/null || true
 }
@@ -3508,11 +3499,12 @@ humanlayer_wait_for_ready() {
   return 1
 }
 
-humanlayer_delivery_is_confirmed() {  # <plain-pane-capture>
-  case "$(fm_busy_classify "$BACKEND" "$T" humanlayer "$ID" "$STATE" "$1")" in
-    busy*) return 0 ;;
-  esac
-  return 1
+humanlayer_delivery_is_confirmed() {
+  printf '%s\n' "$1" | awk '
+    /^> Read the brief at / { submitted = 1; confirmed = 0; next }
+    submitted && /^\[(Tool|Assistant|Done)\]/ { confirmed = 1 }
+    END { exit !confirmed }
+  '
 }
 
 humanlayer_wait_for_delivery() {
