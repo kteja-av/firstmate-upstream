@@ -1,5 +1,12 @@
 #!/usr/bin/env bash
 
+fm_humanlayer_require_backend() {
+  case "$1" in
+    tmux|herdr) return 0 ;;
+    *) printf "error: unsupported backend for HumanLayer dispatch: %s (supported: tmux, herdr)\n" "$1" >&2; return 1 ;;
+  esac
+}
+
 # Plain transcript-shaped input cannot prove completion. Only the styled
 # vendor completion row can retire an earlier prompt; a literal > inside a
 # multiline draft must not establish an empty composer.
@@ -41,6 +48,7 @@ fm_humanlayer_screen_state() {
 # Prefer styling where the backend exposes it. Plain captures deliberately
 # cannot clear ambiguous prompt history using a pasted completion marker.
 fm_humanlayer_capture() {  # <backend> <target> [expected-label]
+  fm_humanlayer_require_backend "$1" || return 1
   if command -v fm_backend_source >/dev/null 2>&1; then
     fm_backend_source "$1" || return 1
   fi
@@ -54,8 +62,6 @@ fm_humanlayer_capture() {  # <backend> <target> [expected-label]
       # sees LF rows.
       printf '%s' "$out" | tr -d '\r'
       ;;
-    zellij) fm_backend_zellij_composer_capture "$2" "${3:-}" 2>/dev/null ;;
-    *) fm_backend_capture "$1" "$2" 200 "${3:-}" ;;
   esac
 }
 

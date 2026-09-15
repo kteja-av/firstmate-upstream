@@ -76,7 +76,7 @@ fm_backend_agent_state() { printf alive; }
 fm_backend_composer_state() { printf unknown; }
 fm_task_inbox_doorbell_line() { printf doorbell; }
 
-for backend in tmux herdr cmux orca zellij; do
+for backend in tmux herdr; do
   for fixture_screen in $'>\n[Done] complete\n>' $'> Investigate this log:\n[Done] complete\n>' '> draft' $'> Investigate this log:\n[Done] complete\n\n' $'>\n[Assistant] draft' ''; do
     capture_ok=yes
     submissions=0
@@ -91,7 +91,6 @@ for backend in tmux herdr cmux orca zellij; do
     [ ! -e "$TEST_TMP/submitted" ] || fail "$backend inbox must not call submit on unsafe input"
   done
   fixture_screen=$'> previous prompt\n\033[38;2;34;197;94m[Done]\033[39m complete\n>\n'
-  case "$backend" in cmux|orca) fixture_screen='>' ;; esac
   capture_ok=no
   if fm_backend_send_text_submit "$backend" endpoint instruction 1 0 0 worker-label humanlayer >/dev/null; then
     fail "$backend must defer failed capture"
@@ -106,7 +105,7 @@ done
 
 
 banner=$'[codex-provider] using sse transport http://localhost/session\ncodelayer - provider: codex, model: gpt-6-astra'
-for backend in tmux herdr cmux orca zellij; do
+for backend in tmux herdr; do
   capture_ok=yes
   for fixture_screen in "$banner"$'\n>\n' "$banner"$'\n\n>\n'; do
     submissions=0
@@ -135,7 +134,7 @@ done
 
 footer=$'  Model            Input   Output     Cost             Context\n  gpt-6-astra      5,534        13   ~$0.06  5,542/258,400 (2%)'
 for completion in $'\033[38;2;34;197;94m[Done]\033[39m complete' $'\033[0m\033[38;2;34;197;94m[Done]\033[0m complete\r'; do
-  for backend in tmux herdr cmux orca zellij; do
+  for backend in tmux herdr; do
     capture_ok=yes
     settled_screen=$'> previous prompt\n'"$completion"$'\n'"$footer"
     fixture_screen="$settled_screen"$'\n>\n'
@@ -162,7 +161,7 @@ for completion in $'\033[38;2;34;197;94m[Done]\033[39m complete' $'\033[0m\033[3
 done
 
 
-for backend in herdr cmux orca; do
+for backend in herdr; do
   for delivery in working complete swallowed; do
     fixture_screen=$'> instruction\n[Assistant] old result\n\033[38;2;34;197;94m[Done]\033[39m complete\n>\n'
     : > "$TEST_TMP/keys"
@@ -179,7 +178,7 @@ done
 
 
 bounded_capture=1
-for backend in herdr cmux orca; do
+for backend in herdr; do
   for delivery in working complete swallowed no-overlap; do
     fixture_screen=$(for ((row=1; row<=196; row++)); do printf 'history %s\n' "$row"; done
       printf '> instruction\n[Assistant] old result\n\033[38;2;34;197;94m[Done]\033[39m complete\n>\n')
@@ -193,4 +192,20 @@ for backend in herdr cmux orca; do
     [ "$(wc -l < "$TEST_TMP/keys" | tr -d ' ')" = 1 ] || fail "$backend must not resubmit after scrolling"
   done
   pass "$backend confirms overlapping captures without borrowing historical responses"
+done
+
+for backend in cmux orca zellij; do
+  for fixture_screen in '>' $'> previous prompt\n[Done] complete\n>' $'> previous prompt\n\033[38;2;34;197;94m[Done]\033[39m complete\n>'; do
+    rm -f "$TEST_TMP/submitted" "$TEST_TMP/keys"
+    if fm_backend_send_text_submit "$backend" endpoint instruction 1 0 0 worker-label humanlayer >"$TEST_TMP/verdict" 2>"$TEST_TMP/error"; then
+      fail "$backend must refuse HumanLayer dispatch"
+    fi
+    assert_contains "$(cat "$TEST_TMP/error")" 'unsupported backend for HumanLayer dispatch' "$backend must explain refusal"
+    [ ! -e "$TEST_TMP/submitted" ] && [ ! -e "$TEST_TMP/keys" ] || fail "$backend refusal must not type or submit"
+    if fm_task_inbox_ring "$backend" endpoint record worker-label humanlayer; then
+      fail "$backend must refuse HumanLayer inbox delivery"
+    fi
+    [ ! -e "$TEST_TMP/submitted" ] || fail "$backend inbox refusal must not type"
+  done
+  pass "$backend refuses HumanLayer dispatch regardless of screen content"
 done

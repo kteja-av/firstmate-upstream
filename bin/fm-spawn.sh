@@ -1939,6 +1939,11 @@ case "$ARG3" in
   ;;
 esac
 
+if [ "$HARNESS" = humanlayer ]; then
+  . "$SCRIPT_DIR/fm-humanlayer-lib.sh"
+  fm_humanlayer_require_backend "$BACKEND" || exit 1
+fi
+
 # muse, gemini, and agy are verified as CREWMATE/SCOUT adapters only. A secondmate is
 # a firstmate instance, so it needs a primary supervision protocol.
 # gemini has none: docs/supervision-protocols/ carries no gemini wake protocol
