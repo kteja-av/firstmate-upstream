@@ -260,6 +260,8 @@ test_staging_write_failure_preserves_catchup() {
   for stage in brief evidence; do
     dir="$TMP_ROOT/staging-failure-$stage"
     install_runner "$dir"
+    date +%s > "$dir/home/state/.afk"
+    touch "$dir/home/state/.last-watcher-beat"
     printf '1784074271\t7\tsignal\trecovery-task.status\tsignal: retry staging\n' > "$dir/home/state/.fake-drain"
     printf 'retained escalation\n' > "$dir/home/state/.subsuper-escalations"
     cat > "$dir/fail-write.sh" <<'SH'
@@ -276,12 +278,17 @@ SH
     BASH_ENV="$dir/fail-write.sh" FAIL_STAGE="$stage" run_return "$dir" begin > "$dir/output" || rc=$?
     [ "$rc" -eq 3 ] || fail "$stage staging failure should retain catch-up (rc=$rc)"
     [ -s "$dir/home/state/.afk-return-catchup" ] || fail "$stage staging failure removed the gate"
+    [ ! -e "$dir/home/state/.afk" ] || fail "$stage staging failure did not reach shutdown"
+    assert_contains "$(cat "$dir/home/state/.afk-return-catchup")" 'GAP: the away daemon was not running at return' "$stage staging failure lost the initial health snapshot"
     [ -s "$dir/home/state/.fake-drain" ] || fail "$stage staging failure consumed the wake"
     [ -s "$dir/home/state/.subsuper-escalations" ] || fail "$stage staging failure removed delivery artifacts"
     [ ! -e "$dir/home/state/.fake-drain-acks" ] || fail "$stage staging failure acknowledged the wake"
     out=$(cat "$dir/output")
     assert_not_contains "$out" 'partial output' "$stage staging failure published incomplete output"
+    touch "$dir/home/state/.last-watcher-beat"
     out=$(run_return "$dir" check) || fail "$stage staging retry failed: $out"
+    assert_contains "$out" 'GAP: the away daemon was not running at return' "$stage staging retry lost the pre-shutdown gap"
+    assert_not_contains "$out" 'no detected gap' "$stage staging retry incorrectly reported a healthy window"
     assert_contains "$out" 'catch-up wake: 1784074271' "$stage staging retry lost wake evidence"
     [ ! -e "$dir/home/state/.afk-return-catchup" ] || fail "$stage staging retry left the gate"
   done
