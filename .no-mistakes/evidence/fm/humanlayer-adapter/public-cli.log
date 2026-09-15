@@ -1,0 +1,8 @@
+Home A executor: humanlayer
+Home B executor: codex
+Backend cmux: error: unsupported backend for HumanLayer dispatch: cmux (supported: tmux, herdr)
+exit=1
+Backend orca: error: unsupported backend for HumanLayer dispatch: orca (supported: tmux, herdr)
+exit=1
+Backend zellij: error: unsupported backend for HumanLayer dispatch: zellij (supported: tmux, herdr)
+exit=1

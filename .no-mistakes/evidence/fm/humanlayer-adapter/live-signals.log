@@ -98,10 +98,11 @@ codelayer - provider: codex, model: gpt-6-astra
 [38;2;34;197;94m[Done][39m complete
 
 [2m  Model            Input   Cache↓   Cache↑   Output     Cost             Context
-[0m  gpt-6-astra      5,567    5,376        0        6   ~$0.01  5,573/258,400 (2%)
+[0m  gpt-6-astra      5,565    3,712        0        6   ~$0.02  5,571/258,400 (2%)
 
 > Run: sleep 90; then reply LATE-GUARD
-[38;2;239;68;68m[Tool] bash call_id=call_IYVB9zTOFdX2Hgk8WIXDR7ra agent=root depth=0[39m [2mcommand=[0msleep 90 [2mtimeout=[0m120000 [2mdescription=[0mWait ninety seconds before replying as requested
+[38;2;239;68;68m[Tool] bash call_id=call_LFc9tNlQ1GA5un0Bm1BX9rbo agent=root depth=0[39m [2mcommand=[0msleep 90 [2mtimeout=[0m120000 [2mdescription=[0mWait ninety seconds before replying
+
 
 
 

@@ -16,4 +16,4 @@ ok - fm-spawn: humanlayer cannot be launched as a secondmate, the muse/gemini/ag
 ok - fm-spawn: humanlayer refuses loudly when brief delivery cannot be confirmed, and tears down the created endpoint
 ok - HumanLayer retains delivery evidence across scrolling and honors confirmed submissions
 ok - HumanLayer activity is scoped to live tool descendants of the identified worker
-ok - the herdr busy probe proves tool activity through the shared descendant walk
+ok - herdr HumanLayer busy stays unknown; supervision reads the status log and turn-end events
