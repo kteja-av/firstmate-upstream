@@ -66,3 +66,30 @@ for backend in tmux herdr cmux orca zellij; do
   fm_task_inbox_ring "$backend" endpoint record worker-label humanlayer || fail "$backend must ring an idle worker"
   pass "$backend HumanLayer submission requires an affirmatively empty composer"
 done
+
+
+banner=$'[codex-provider] using sse transport http://localhost/session\ncodelayer - provider: codex, model: gpt-6-astra'
+for backend in tmux herdr cmux orca zellij; do
+  capture_ok=yes
+  fixture_screen="$banner"$'\n>\n'
+  submissions=0
+  rm -f "$TEST_TMP/submitted"
+  fm_backend_send_text_submit "$backend" endpoint instruction 1 0 0 worker-label humanlayer >/dev/null \
+    || fail "$backend must accept the verified fresh-launch composer"
+  [ "$submissions" = 1 ] || fail "$backend must deliver the fresh-launch instruction once"
+  fm_task_inbox_ring "$backend" endpoint record worker-label humanlayer \
+    || fail "$backend must ring the verified fresh-launch composer"
+  for fixture_screen in "$banner"$'\nretained log\n>' $'retained log\n'"$banner"$'\n>' "$banner"$'\n> draft\n>' "$banner"$'\n>\n>' $'codelayer - provider: codex, model: gpt-6-astra\n>' "$banner"$'\n\n>'; do
+    submissions=0
+    rm -f "$TEST_TMP/submitted"
+    if fm_backend_send_text_submit "$backend" endpoint instruction 1 0 0 worker-label humanlayer >/dev/null; then
+      fail "$backend must reject incomplete or displaced startup provenance"
+    fi
+    [ "$submissions" = 0 ] || fail "$backend must preserve ambiguous startup content"
+    if fm_task_inbox_ring "$backend" endpoint record worker-label humanlayer; then
+      fail "$backend inbox must reject ambiguous startup content"
+    fi
+    [ ! -e "$TEST_TMP/submitted" ] || fail "$backend inbox must preserve ambiguous startup content"
+  done
+  pass "$backend accepts only the top-anchored fresh-launch banner and empty composer"
+done
