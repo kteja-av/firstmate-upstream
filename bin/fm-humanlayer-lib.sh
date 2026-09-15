@@ -2,12 +2,8 @@
 
 fm_humanlayer_screen_state() {
   awk '
-    BEGIN { state = "unknown" }
-    /^>[[:space:]]*$/ { state = pending ? "unknown" : "idle"; next }
-    /^>/ { pending = 1; state = "unknown"; next }
-    /^\[Done\]/ { pending = 0; state = "unknown"; next }
-    /[^[:space:]]/ && state == "idle" { state = "unknown" }
-    END { print state }
+    /[^[:space:]]/ { last = $0 }
+    END { print last ~ /^>[[:space:]]*$/ ? "idle" : "unknown" }
   '
 }
 

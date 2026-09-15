@@ -973,7 +973,7 @@ test_humanlayer_lifecycle() {
   local pending
   for pending in $'> Investigate this log:\n[Tool] bash command=sleep 30' \
     $'> Investigate this log:\n[Assistant] example' \
-    $'> Investigate this log:\n>' \
+    $'> Investigate this log:\n[Done] complete\n' \
     $'> Investigate this log:\nwrapped input\n[Tool] bash command=sleep 30'; do
     printf '%s\n' "$pending" > "$dir/fake/pane"
     out=$(run_control "$dir" t1 interrupt); rc=$?
@@ -1027,7 +1027,7 @@ test_humanlayer_direct_delivery() {
       working) ;;
       busy) printf '[Tool] bash command=sleep 30\n' > "$dir/fake/pane" ;;
       pending) printf '> old pending text\n' > "$dir/fake/pane" ;;
-      continuation) printf '> Investigate this log:\n>\n' > "$dir/fake/pane" ;;
+      continuation) printf '> Investigate this log:\n[Done] complete\n\n' > "$dir/fake/pane" ;;
       *) : > "$dir/fake/hl-$mode" ;;
     esac
     out=$(env PATH="$dir/fakebin:$PATH" FM_HOME="$dir/home" FM_FAKE_DIR="$dir/fake" \
@@ -1050,14 +1050,14 @@ test_humanlayer_task_id_doorbell_preserves_pending_input() {
   dir=$(new_case hl-inbox-pending)
   add_task "$dir" t1 humanlayer
   alive_as "$dir" humanlayer
-  printf '> draft\n' > "$dir/fake/pane"
+  printf '> Investigate this log:\n[Done] complete\n\n' > "$dir/fake/pane"
   out=$(env PATH="$dir/fakebin:$PATH" FM_HOME="$dir/home" FM_FAKE_DIR="$dir/fake" \
     "$SEND" t1 'inspect the delivery' 2>&1); rc=$?
   expect_code 0 "$rc" "the instruction must be durably queued: $out"
   [ -f "$dir/home/state/t1.inbox/001.msg" ] || fail "the queued instruction must survive a skipped doorbell"
   [ ! -s "$dir/fake/literal" ] || fail "the inbox doorbell must not concatenate onto pending HumanLayer input"
   [ ! -s "$dir/fake/keys" ] || fail "the inbox doorbell must not submit pending input"
-  [ "$(cat "$dir/fake/pane")" = '> draft' ] || fail "pending input must remain intact"
+  [ "$(cat "$dir/fake/pane")" = $'> Investigate this log:\n[Done] complete' ] || fail "pending input must remain intact"
   pass "HumanLayer task-id steering queues its record without submitting pending input"
 }
 test_humanlayer_task_id_doorbell_preserves_pending_input

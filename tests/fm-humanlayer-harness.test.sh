@@ -204,6 +204,13 @@ EOF
   # Unknown: a blank or unreadable capture is never idle.
   verdict=$(fm_busy_classify tmux 'win:0' humanlayer hl-test "$HL_STATE" "$tail_blank")
   [ "${verdict%% *}" = unknown ] || fail "a blank capture must stay unknown, got '$verdict'"
+  local content
+  for content in '[Done] complete' '[Tool] bash command=sleep 30' '[Assistant] example' 'wrapped draft'; do
+    verdict=$(printf '>\n> Investigate this log:\n%s\n\n  \n' "$content" | fm_humanlayer_screen_state)
+    [ "$verdict" = unknown ] || fail "a content tail must not classify idle: $content"
+    verdict=$(printf '> Investigate this log:\n%s\n>\n\n' "$content" | fm_humanlayer_screen_state)
+    [ "$verdict" = idle ] || fail "a final empty composer must classify idle after history: $content"
+  done
   pass "busy-lib: the humanlayer anchor classifies idle, busy, and unknown from the pinned composer row"
 }
 
