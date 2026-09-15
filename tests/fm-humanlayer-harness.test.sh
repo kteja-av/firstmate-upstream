@@ -16,10 +16,9 @@
 #      runs non-interactively and exits at turn end), so the launch is BARE
 #      and the brief pointer is submitted after a readiness gate and a
 #      delivery gate - the kimi/rovo launch-then-confirm shape.
-#   4. The busy anchor is the pinned bare `>` composer row: the LAST
-#      non-blank pane row exactly `>` is idle, any other non-blank capture
-#      is busy, a blank capture stays unknown. Transcript tokens persist at
-#      idle, so no token regex may classify humanlayer busy.
+#   4. bin/fm-humanlayer-lib.sh owns the provenance-aware idle classifier
+#      and tool-descendant busy proof; transcript-shaped drafts must never
+#      authorize steering or interruption.
 #   5. humanlayer is a crewmate/scout adapter only: a secondmate launch is
 #      refused, and nothing is armed as busy wiring because no writer could
 #      clear it.

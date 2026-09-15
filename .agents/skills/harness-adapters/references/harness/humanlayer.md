@@ -34,10 +34,12 @@ The provider authenticated through the captain's own HumanLayer setup (`humanlay
 
 ## Steering precondition
 
+Check [harness support](../../../../../docs/configuration.md#harness-support) for backend eligibility before dispatch.
+
 Text typed while a turn runs lands in a hidden input buffer and `Enter` does not queue it: the message was silently lost when the turn completed (verified live, humanlayer 0.31.0 - no echo row, no response, no error).
 The shared backend submission boundary refuses injection unless the HumanLayer classifier proves idle, for direct sends and task-inbox doorbells alike.
 On tmux, submission captures output with `pipe-pane` from before typing through the final confirmation decision, preserving the current prompt and provider-output evidence beyond scrollback loss; an existing pane pipe causes deferral.
-Herdr, cmux, and Orca compare subsequent captures against the pre-submission baseline, allowing overlapping captures after scrolling while requiring the current prompt and provider-output evidence to remain visible.
+Herdr compares subsequent captures against the pre-submission baseline, allowing overlapping captures after scrolling while requiring the current prompt and provider-output evidence to remain visible.
 Historical responses cannot confirm a repeated instruction; ambiguous or lost evidence returns unknown.
 A deferred durable inbox record remains available for the watcher's re-ring ladder; enqueue success is not delivery proof.
 Never treat a busy humanlayer worker as safely steerable; wait for a verified idle verdict or use the control plane.
