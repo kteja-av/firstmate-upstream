@@ -1,0 +1,32 @@
+ok - the real humanlayer TUI reaches its verified ready signal
+ok - direct and inbox steering preserve real multiline drafts ending with >
+ok - the real humanlayer turn produces submission evidence
+not ok - the real humanlayer worker never answered its prompt
+/Users/krishnateja/.local/bin/humanlayer codelayer --provider codex
+krishnateja@Krishnas-MacBook-Air workspace % /Users/krishnateja/.local/bin/human
+layer codelayer --provider codex
+[codex-provider] using sse transport for model gpt-6-astra
+codelayer - provider: codex, model: gpt-6-astra
+[codex-provider] using sse transport for model gpt-6-astra
+codelayer - provider: codex, model: gpt-6-astra
+
+> Add 12345 and 67890. Reply with exactly the sum and nothing else
+428528 |   return `opencode/${version2} (${os3.platform()} ${os3.release()}; ${os3.arch()})`;
+428529 | }
+428530 | async function resolveCodexAuth(store, providerId, fetchFn, now4) {
+428531 |   const auth = await store.get(providerId);
+428532 |   if (!auth) {
+428533 |     throw new Error(`Missing auth for provider: ${providerId}`);
+                            ^
+error: Missing auth for provider: codex
+      at resolveCodexAuth (/$bunfs/root/index.js:428533:20)
+      at /$bunfs/root/index.js:429578:41
+      at doStream (/$bunfs/root/index.js:429522:53)
+      at /$bunfs/root/index.js:33743:49
+      at /$bunfs/root/index.js:30170:52
+      at processTicksAndRejections (native:7:39)
+
+
+[38;2;239;68;68m[Done][39m error [2m[unexpected_error] Model stream error: Missing auth for provider: codex
+
+[0m> 

@@ -1,0 +1,18 @@
++ git init -q -b main /Users/krishnateja/.no-mistakes/worktrees/8371016727df/01M2K4XQRAPM193HK8KX228D4W/.test-humanlayer/project
++ git -C /Users/krishnateja/.no-mistakes/worktrees/8371016727df/01M2K4XQRAPM193HK8KX228D4W/.test-humanlayer/project -c user.name=Test -c user.email=test@local commit -q --allow-empty -m init
++ git init -q --bare /Users/krishnateja/.no-mistakes/worktrees/8371016727df/01M2K4XQRAPM193HK8KX228D4W/.test-humanlayer/remote.git
++ git -C /Users/krishnateja/.no-mistakes/worktrees/8371016727df/01M2K4XQRAPM193HK8KX228D4W/.test-humanlayer/project remote add origin /Users/krishnateja/.no-mistakes/worktrees/8371016727df/01M2K4XQRAPM193HK8KX228D4W/.test-humanlayer/remote.git
++ git -C /Users/krishnateja/.no-mistakes/worktrees/8371016727df/01M2K4XQRAPM193HK8KX228D4W/.test-humanlayer/project push -q origin main
++ tmux -S /Users/krishnateja/.no-mistakes/worktrees/8371016727df/01M2K4XQRAPM193HK8KX228D4W/.test-humanlayer/dispatch.sock -f /dev/null new-session -d -s lab -c /Users/krishnateja/.no-mistakes/worktrees/8371016727df/01M2K4XQRAPM193HK8KX228D4W/.test-humanlayer/project
+error connecting to /Users/krishnateja/.no-mistakes/worktrees/8371016727df/01M2K4XQRAPM193HK8KX228D4W/.test-humanlayer/dispatch.sock (File name too long)
++ tmux set-option -g default-shell /bin/bash
+error connecting to /Users/krishnateja/.no-mistakes/worktrees/8371016727df/01M2K4XQRAPM193HK8KX228D4W/.test-humanlayer/dispatch.sock (File name too long)
++ tmux set-option -g default-command /bin/bash --noprofile --norc
+error connecting to /Users/krishnateja/.no-mistakes/worktrees/8371016727df/01M2K4XQRAPM193HK8KX228D4W/.test-humanlayer/dispatch.sock (File name too long)
++ bash /Users/krishnateja/.no-mistakes/worktrees/8371016727df/01M2K4XQRAPM193HK8KX228D4W/bin/fm-spawn.sh live-scout /Users/krishnateja/.no-mistakes/worktrees/8371016727df/01M2K4XQRAPM193HK8KX228D4W/.test-humanlayer/project --scout --effort low
+error: no-mistakes gate agent must not drive the fleet (NO_MISTAKES_GATE set)
+SPAWN_EXIT 3
++ tmux capture-pane -p -J -t lab:fm-live-scout -S -
+error connecting to /Users/krishnateja/.no-mistakes/worktrees/8371016727df/01M2K4XQRAPM193HK8KX228D4W/.test-humanlayer/dispatch.sock (File name too long)
++ tmux kill-server
+error connecting to /Users/krishnateja/.no-mistakes/worktrees/8371016727df/01M2K4XQRAPM193HK8KX228D4W/.test-humanlayer/dispatch.sock (File name too long)
