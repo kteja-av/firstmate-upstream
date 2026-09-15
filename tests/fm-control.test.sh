@@ -173,6 +173,11 @@ SH
   chmod +x "$fb/ps"
   cat > "$fb/sleep" <<'SH'
 #!/usr/bin/env bash
+if [ -e "$FM_FAKE_DIR/hl-start-later" ]; then
+  rm "$FM_FAKE_DIR/hl-start-later"
+  : > "$FM_FAKE_DIR/hl-active"
+  printf '[Tool] bash command=sleep 90\n' > "$FM_FAKE_DIR/pane"
+fi
 if [ -e "$FM_FAKE_DIR/hl-settling" ] && [ ! -e "$FM_FAKE_DIR/hl-stuck" ]; then
   printf '>\n' > "$FM_FAKE_DIR/pane"
   rm "$FM_FAKE_DIR/hl-settling"
@@ -999,6 +1004,14 @@ test_humanlayer_lifecycle() {
   out=$(run_control "$dir" t1 exit); rc=$?
   expect_code 0 "$rc" "active HumanLayer exit must cancel before exiting: $out"
   [ "$(keys_sent "$dir")" = $'C-c\nC-c' ] || fail "active exit must send two keys"
+  alive_as "$dir" humanlayer
+  : > "$dir/fake/keys"
+  : > "$dir/fake/hl-start-later"
+  printf '> Waiting for model response\n' > "$dir/fake/pane"
+  out=$(run_control "$dir" t1 exit); rc=$?
+  expect_code 0 "$rc" "HumanLayer exit must cancel newly observed activity: $out"
+  [ ! -e "$dir/fake/hl-start-later" ] || fail "the worker must become busy during the exit wait"
+  [ "$(keys_sent "$dir")" = $'C-c\nC-c' ] || fail "newly busy exit must interrupt once, then exit"
   pass "HumanLayer cancels active tools and refuses ambiguous composer input"
 }
 test_humanlayer_lifecycle

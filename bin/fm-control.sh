@@ -508,6 +508,13 @@ do_exit() {
       esac
       case "$(busy_verdict)" in
         idle\ humanlayer-anchor) break ;;
+        busy*)
+          if [ "$interrupt_result" = not-needed ]; then
+            cancel=$(deliver_interrupt) || return $?
+            interrupt_result="delivered cancel=$cancel"
+            elapsed=0
+          fi
+          ;;
       esac
       awk -v e="$elapsed" -v t="$SETTLE_WAIT" 'BEGIN{exit !(e < t)}' \
         || die "task $ID did not reach its verified idle composer; refusing the exit key"
