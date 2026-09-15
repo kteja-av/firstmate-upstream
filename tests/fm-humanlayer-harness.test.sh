@@ -174,8 +174,7 @@ mkdir -p "$HL_STATE"
 
 test_humanlayer_anchor_classifies_idle_busy_unknown() {
   local verdict tail_idle tail_tool tail_echo tail_blank
-  tail_idle=$(cat <<'EOF'
-[Done] complete
+  tail_idle=$(printf '\033[38;2;34;197;94m[Done]\033[39m complete\n'; cat <<'EOF'
   Model            Input   Output     Cost             Context
   gpt-6-astra      5,534        13   ~$0.06  5,542/258,400 (2%)
 >
@@ -297,6 +296,9 @@ case "$*" in
   *"#{cursor_y}"*) printf '3\n'; exit 0 ;;
 esac
 case "${1:-}" in
+  pipe-pane)
+    if [ "$2" = -O ]; then printf '%s' "${!#}" > "$FM_FAKE_HL_STATE.pipe"; else rm -f "$FM_FAKE_HL_STATE.pipe"; fi
+    exit 0 ;;
   display-message) printf 'firstmate\n'; exit 0 ;;
   list-windows) exit 0 ;;
   has-session|new-session|new-window|kill-window) exit 0 ;;
@@ -331,6 +333,8 @@ case "${1:-}" in
           pointer-typed)
             if [ "${FM_FAKE_HL_DELIVERY:-yes}" = yes ]; then
               printf 'delivered\n' > "$FM_FAKE_HL_STATE"
+              state=delivered
+              if [ -f "$FM_FAKE_HL_STATE.pipe" ]; then fake_screen | bash -c "$(cat "$FM_FAKE_HL_STATE.pipe")"; fi
             elif [ "${FM_FAKE_HL_DELIVERY:-yes}" != swallowed ]; then
               printf 'ready\n' > "$FM_FAKE_HL_STATE"
             fi

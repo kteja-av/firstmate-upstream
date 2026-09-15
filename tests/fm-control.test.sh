@@ -81,6 +81,9 @@ make_tmux_stub() {  # <dir> -> echoes fakebin dir
 set -u
 D=$FM_FAKE_DIR
 case "${1:-}" in
+  pipe-pane)
+    if [ "$2" = -O ]; then printf '%s' "${!#}" > "$D/pipe-command"; else rm -f "$D/pipe-command"; fi
+    exit 0 ;;
   send-keys)
     shift
     literal=0
@@ -114,6 +117,7 @@ case "${1:-}" in
           else
             printf '[Tool] bash command=sleep 30\n' >> "$D/pane"
           fi
+          if [ -f "$D/pipe-command" ]; then bash -c "$(cat "$D/pipe-command")" < "$D/pane"; fi
         fi
       fi
       if [ "$payload" = C-c ] && [ "$(cat "$D/command")" = humanlayer ]; then

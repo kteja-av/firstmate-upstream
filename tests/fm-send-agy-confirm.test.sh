@@ -45,11 +45,15 @@ TMP_ROOT=$(fm_test_tmproot fm-send-agy-confirm)
 make_stubs() {  # <dir> <busy-at> -> echoes fakebin dir
   local dir=$1 busy_at=$2 fb="$1/fakebin"
   mkdir -p "$fb"
+  printf '%s' "$busy_at" > "$dir/busy-at"
   cat > "$fb/tmux" <<SH
 #!/usr/bin/env bash
 set -u
 cnt_file="$dir/plain.count"
 case "\${1:-}" in
+  pipe-pane)
+    if [ "\$2" = -O ]; then printf '%s' "\${!#}" > "$dir/pipe-command"; else rm -f "$dir/pipe-command"; fi
+    exit 0 ;;
   send-keys)
     if [ "\${FM_TEST_HARNESS:-}" = humanlayer ]; then
       printf '%s\n' "\$*" >> "$dir/keys.log"
@@ -96,6 +100,14 @@ SH
   cat > "$fb/sleep" <<'SH'
 #!/usr/bin/env bash
 printf '%s\n' "${1:-}" >> "$FM_SLEEP_LOG"
+dir=${FM_SLEEP_LOG%/*}
+if [ "${FM_TEST_HARNESS:-}" = humanlayer ] && [ -f "$dir/submitted" ] && [ -f "$dir/pipe-command" ]; then
+  n=$(( $(cat "$dir/evidence.count" 2>/dev/null || echo 0) + 1 ))
+  printf '%s' "$n" > "$dir/evidence.count"
+  if [ "$n" -ge "$(cat "$dir/busy-at")" ]; then
+    printf '> Append steer1 line to notes.md\n[Assistant] Done\n' | bash -c "$(cat "$dir/pipe-command")"
+  fi
+fi
 exit 0
 SH
   chmod +x "$fb/sleep"
