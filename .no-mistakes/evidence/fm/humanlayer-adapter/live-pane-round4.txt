@@ -1,0 +1,104 @@
+
+--- 02:04:56 ---
+[codex-provider] using sse transport for model gpt-6-astra
+codelayer - provider: codex, model: gpt-6-astra
+
+> Investigate this log:
+[Done] complete
+>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--- 02:04:57 ---
+[codex-provider] using sse transport for model gpt-6-astra
+codelayer - provider: codex, model: gpt-6-astra
+
+> 
+[Done] complete
+> >
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--- 02:04:58 ---
+[codex-provider] using sse transport for model gpt-6-astra
+codelayer - provider: codex, model: gpt-6-astra
+
+> Add 12345 and 67890. Reply with exactly the sum and nothing else
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--- 02:05:01 ---
+[codex-provider] using sse transport for model gpt-6-astra
+codelayer - provider: codex, model: gpt-6-astra
+
+> Add 12345 and 67890. Reply with exactly the sum and nothing else
+[Assistant] 80235
+
+[Done] complete
+
+  Model            Input   Cache↓   Cache↑   Output     Cost             Context
+  gpt-6-astra      5,563        0        0        6   ~$0.06  5,569/258,400 (2%)
+
+> Run: sleep 90; then reply LATE-GUARD
+
+
+
+
+
+
+
+
+
+
+
+

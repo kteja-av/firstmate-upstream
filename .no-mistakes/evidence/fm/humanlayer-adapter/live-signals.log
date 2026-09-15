@@ -1,0 +1,31 @@
+ok - the real humanlayer TUI reaches its verified ready signal
+not ok - reset worker did not restore an empty composer
+/Users/krishnateja/.local/bin/humanlayer codelayer --provider codex
+krishnateja@Krishnas-MacBook-Air workspace % /Users/krishnateja/.local/bin/human
+layer codelayer --provider codex
+[codex-provider] using sse transport for model gpt-6-astra
+codelayer - provider: codex, model: gpt-6-astra
+[codex-provider] using sse transport for model gpt-6-astra
+codelayer - provider: codex, model: gpt-6-astra
+
+> 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

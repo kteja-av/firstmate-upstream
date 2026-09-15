@@ -1,0 +1,9 @@
+
+[38;2;34;197;94m[Assistant][39m 80235
+
+[38;2;34;197;94m[Done][39m complete
+
+[2m  Model            Input   Cache↓   Cache↑   Output     Cost             Context[22m
+  gpt-6-astra      5,564        0        0        6   ~$0.06  5,570/258,400 (2%)
+
+[1G[0J> [3G

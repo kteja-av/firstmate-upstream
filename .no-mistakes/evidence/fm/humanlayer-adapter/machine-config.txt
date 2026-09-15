@@ -1,0 +1,2 @@
+Machine A crew: humanlayer
+Machine B crew: codex

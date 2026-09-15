@@ -1,0 +1,207 @@
+
+### the real humanlayer TUI reaches its verified ready signal
+[codex-provider] using sse transport for model gpt-6-astra
+codelayer - provider: codex, model: gpt-6-astra
+
+> 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### direct and inbox steering preserve real multiline drafts ending with >
+[codex-provider] using sse transport for model gpt-6-astra
+codelayer - provider: codex, model: gpt-6-astra
+
+> 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### shared submission boundary confirms initial delivery
+[codex-provider] using sse transport for model gpt-6-astra
+codelayer - provider: codex, model: gpt-6-astra
+
+> Add 12345 and 67890. Reply with exactly the sum and nothing else
+[Assistant] 80235
+
+[Done] complete
+
+  Model            Input   Cache↓   Cache↑   Output     Cost             Context
+  gpt-6-astra      5,565    5,376        0        6   ~$0.01  5,571/258,400 (2%)
+
+> 
+
+
+
+
+
+
+
+
+
+
+
+
+
+### the real humanlayer turn produces submission evidence
+[codex-provider] using sse transport for model gpt-6-astra
+codelayer - provider: codex, model: gpt-6-astra
+
+> Add 12345 and 67890. Reply with exactly the sum and nothing else
+[Assistant] 80235
+
+[Done] complete
+
+  Model            Input   Cache↓   Cache↑   Output     Cost             Context
+  gpt-6-astra      5,565    5,376        0        6   ~$0.01  5,571/258,400 (2%)
+
+> 
+
+
+
+
+
+
+
+
+
+
+
+
+
+### the real humanlayer worker processed its prompt and settled idle
+[codex-provider] using sse transport for model gpt-6-astra
+codelayer - provider: codex, model: gpt-6-astra
+
+> Add 12345 and 67890. Reply with exactly the sum and nothing else
+[Assistant] 80235
+
+[Done] complete
+
+  Model            Input   Cache↓   Cache↑   Output     Cost             Context
+  gpt-6-astra      5,565    5,376        0        6   ~$0.01  5,571/258,400 (2%)
+
+> 
+
+
+
+
+
+
+
+
+
+
+
+
+
+### the settled humanlayer tail reads idle through the anchor fold
+[codex-provider] using sse transport for model gpt-6-astra
+codelayer - provider: codex, model: gpt-6-astra
+
+> Add 12345 and 67890. Reply with exactly the sum and nothing else
+[Assistant] 80235
+
+[Done] complete
+
+  Model            Input   Cache↓   Cache↑   Output     Cost             Context
+  gpt-6-astra      5,565    5,376        0        6   ~$0.01  5,571/258,400 (2%)
+
+> 
+
+
+
+
+
+
+
+
+
+
+
+
+
+### HumanLayer running-tool activity is attributable to its foreground process
+[codex-provider] using sse transport for model gpt-6-astra
+codelayer - provider: codex, model: gpt-6-astra
+
+> Add 12345 and 67890. Reply with exactly the sum and nothing else
+[Assistant] 80235
+
+[Done] complete
+
+  Model            Input   Cache↓   Cache↑   Output     Cost             Context
+  gpt-6-astra      5,565    5,376        0        6   ~$0.01  5,571/258,400 (2%)
+
+> Run: sleep 90; then reply LATE-GUARD
+[Tool] bash call_id=call_Swnakdx45qLs30GDRET2X83e agent=root depth=0 command=sleep 90 timeout=120000 description=Wait ninety seconds before replying
+
+
+
+
+
+
+
+
+
+
+
+### a single Ctrl+C cancels the real humanlayer turn
+[codex-provider] using sse transport for model gpt-6-astra
+codelayer - provider: codex, model: gpt-6-astra
+
+> Add 12345 and 67890. Reply with exactly the sum and nothing else
+[Assistant] 80235
+
+[Done] complete
+
+  Model            Input   Cache↓   Cache↑   Output     Cost             Context
+  gpt-6-astra      5,565    5,376        0        6   ~$0.01  5,571/258,400 (2%)
+
+> Run: sleep 90; then reply LATE-GUARD
+[Tool] bash call_id=call_Swnakdx45qLs30GDRET2X83e agent=root depth=0 command=sleep 90 timeout=120000 description=Wait ninety seconds before replying
+[Tool Result] bash call_id=call_Swnakdx45qLs30GDRET2X83e agent=root depth=0 status=ok
+
+[Done] Agent interrupted
+
+  Model            Input   Cache↓   Cache↑   Output     Cost             Context
+  gpt-6-astra      5,590        0        0       33   ~$0.06  5,623/258,400 (2%)
+
+> 
+
+
+### a single Ctrl+C at the idle composer stops the real humanlayer process

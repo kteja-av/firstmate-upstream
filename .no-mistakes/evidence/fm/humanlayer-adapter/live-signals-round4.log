@@ -1,0 +1,9 @@
+ok - the real humanlayer TUI reaches its verified ready signal
+ok - direct and inbox steering preserve real multiline drafts ending with >
+ok - the shared submission boundary confirms the initial instruction
+ok - the real humanlayer turn produces submission evidence
+ok - the real humanlayer worker processed its prompt and settled idle
+ok - the settled humanlayer tail reads idle through the anchor fold
+ok - HumanLayer running-tool activity is attributable to its foreground process
+ok - a single Ctrl+C cancels the real humanlayer turn
+ok - a single Ctrl+C at the idle composer stops the real humanlayer process

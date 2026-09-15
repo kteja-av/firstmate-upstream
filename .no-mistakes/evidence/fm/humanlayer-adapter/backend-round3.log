@@ -1,0 +1,26 @@
+ok - tmux HumanLayer submission requires an affirmatively empty composer
+ok - herdr HumanLayer submission requires an affirmatively empty composer
+ok - cmux HumanLayer submission requires an affirmatively empty composer
+ok - orca HumanLayer submission requires an affirmatively empty composer
+ok - zellij HumanLayer submission requires an affirmatively empty composer
+ok - tmux accepts only the top-anchored fresh-launch banner and empty composer
+ok - herdr accepts only the top-anchored fresh-launch banner and empty composer
+ok - cmux accepts only the top-anchored fresh-launch banner and empty composer
+ok - orca accepts only the top-anchored fresh-launch banner and empty composer
+ok - zellij accepts only the top-anchored fresh-launch banner and empty composer
+ok - tmux preserves completion through usage furniture and rejects new drafts
+ok - herdr preserves completion through usage furniture and rejects new drafts
+ok - cmux preserves completion through usage furniture and rejects new drafts
+ok - orca preserves completion through usage furniture and rejects new drafts
+ok - zellij preserves completion through usage furniture and rejects new drafts
+ok - tmux preserves completion through usage furniture and rejects new drafts
+ok - herdr preserves completion through usage furniture and rejects new drafts
+ok - cmux preserves completion through usage furniture and rejects new drafts
+ok - orca preserves completion through usage furniture and rejects new drafts
+ok - zellij preserves completion through usage furniture and rejects new drafts
+ok - herdr confirms current HumanLayer responses without generic composer state
+ok - cmux confirms current HumanLayer responses without generic composer state
+ok - orca confirms current HumanLayer responses without generic composer state
+ok - herdr confirms overlapping captures without borrowing historical responses
+ok - cmux confirms overlapping captures without borrowing historical responses
+ok - orca confirms overlapping captures without borrowing historical responses

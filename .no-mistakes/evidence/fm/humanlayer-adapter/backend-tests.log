@@ -3,3 +3,4 @@ ok - herdr HumanLayer submission requires an affirmatively empty composer
 ok - cmux HumanLayer submission requires an affirmatively empty composer
 ok - orca HumanLayer submission requires an affirmatively empty composer
 ok - zellij HumanLayer submission requires an affirmatively empty composer
+not ok - tmux must reject incomplete or displaced startup provenance

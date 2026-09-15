@@ -1,0 +1,9 @@
+Add 12345 and 67890. Reply with exactly the sum and nothing else
+[38;2;34;197;94m[Assistant][39m 80235
+
+[38;2;34;197;94m[Done][39m complete
+
+[2m  Model            Input   Cache↓   Cache↑   Output     Cost             Context[22m
+  gpt-6-astra      5,566        0        0        6   ~$0.06  5,572/258,400 (2%)
+
+[1G[0J> [3G

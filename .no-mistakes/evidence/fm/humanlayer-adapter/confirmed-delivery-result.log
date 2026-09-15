@@ -1,0 +1,27 @@
+ok - the real humanlayer TUI reaches its verified ready signal
+ok - direct and inbox steering preserve real multiline drafts ending with >
+not ok - shared submission did not confirm the initial instruction: unknown
+[codex-provider] using sse transport for model gpt-6-astra
+codelayer - provider: codex, model: gpt-6-astra
+
+> Add 12345 and 67890. Reply with exactly the sum and nothing else
+[38;2;34;197;94m[Assistant][39m 80235
+
+[38;2;34;197;94m[Done][39m complete
+
+[2m  Model            Input   Cache↓   Cache↑   Output     Cost             Context
+[0m  gpt-6-astra      5,564        0        0        6   ~$0.06  5,570/258,400 (2%)
+
+> 
+
+
+
+
+
+
+
+
+
+
+
+

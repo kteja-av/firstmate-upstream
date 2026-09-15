@@ -1,0 +1,2 @@
+machine-a: config/crew-harness=humanlayer; fm-harness.sh crew => humanlayer
+machine-b: config/crew-harness=codex; fm-harness.sh crew => codex

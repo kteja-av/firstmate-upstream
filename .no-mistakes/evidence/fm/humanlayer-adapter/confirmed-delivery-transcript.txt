@@ -1,0 +1,52 @@
+
+### the real humanlayer TUI reaches its verified ready signal
+[codex-provider] using sse transport for model gpt-6-astra
+codelayer - provider: codex, model: gpt-6-astra
+
+> 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### direct and inbox steering preserve real multiline drafts ending with >
+[codex-provider] using sse transport for model gpt-6-astra
+codelayer - provider: codex, model: gpt-6-astra
+
+> 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
