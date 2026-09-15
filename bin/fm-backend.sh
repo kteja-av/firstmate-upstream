@@ -733,6 +733,15 @@ fm_backend_send_text_submit() {  # <backend> <target> <text> <retries> <enter-sl
   local backend=$1
   shift
   fm_backend_source "$backend" || return 1
+  if [ "${7:-}" = humanlayer ]; then
+    local screen
+    . "$FM_BACKEND_LIB_DIR/fm-humanlayer-lib.sh"
+    if ! screen=$(fm_backend_capture "$backend" "$1" 200 "${6:-}") ||
+      [ "$(printf '%s' "$screen" | fm_humanlayer_screen_state)" != idle ]; then
+      printf 'unknown'
+      return 1
+    fi
+  fi
   case "$backend" in
     tmux) fm_backend_tmux_send_text_submit "$@" ;;
     herdr) fm_backend_herdr_send_text_submit "$@" ;;
