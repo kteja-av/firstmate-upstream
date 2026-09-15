@@ -1,0 +1,9 @@
+Direct submission refusal: cmux
+error: unsupported backend for HumanLayer dispatch: cmux (supported: tmux, herdr)
+exit=1
+Direct submission refusal: orca
+error: unsupported backend for HumanLayer dispatch: orca (supported: tmux, herdr)
+exit=1
+Direct submission refusal: zellij
+error: unsupported backend for HumanLayer dispatch: zellij (supported: tmux, herdr)
+exit=1

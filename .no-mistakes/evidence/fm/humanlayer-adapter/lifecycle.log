@@ -1,0 +1,13 @@
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the requested message WILL still be sent.
+●  repair missing watcher supervision according to the session-start block for this harness; do not use shell &.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+interrupt-delivered hl-scout3 harness=humanlayer backend=tmux verified=agent-alive cancel=unconfirmed
+stopped hl-scout3 harness=humanlayer backend=tmux endpoint=firstmate:fm-hl-scout3 worktree=/Users/krishnateja/.no-mistakes/worktrees/8371016727df/01M2KEHMBHW96ED00C6BD23C6B/.test-humanlayer/pool/.treehouse/project-293d83/1/project
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+relaunched hl-scout3 harness=humanlayer from=humanlayer model=default effort=default backend=tmux endpoint=firstmate:fm-hl-scout3 worktree=/Users/krishnateja/.no-mistakes/worktrees/8371016727df/01M2KEHMBHW96ED00C6BD23C6B/.test-humanlayer/pool/.treehouse/project-293d83/1/project
+stopped hl-scout3 harness=humanlayer backend=tmux endpoint=firstmate:fm-hl-scout3 worktree=/Users/krishnateja/.no-mistakes/worktrees/8371016727df/01M2KEHMBHW96ED00C6BD23C6B/.test-humanlayer/pool/.treehouse/project-293d83/1/project
+stopped hl-ship harness=humanlayer backend=tmux endpoint=firstmate:fm-hl-ship worktree=/Users/krishnateja/.no-mistakes/worktrees/8371016727df/01M2KEHMBHW96ED00C6BD23C6B/.test-humanlayer/pool/.treehouse/project-293d83/2/project

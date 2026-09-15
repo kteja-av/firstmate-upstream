@@ -1,0 +1,19 @@
+ok - fm-harness.sh: ancestry detects a natively-named humanlayer child at comm strength
+ok - fm-harness.sh: the interpreter args arm detects the humanlayer node shim
+ok - fm-harness.sh: ancestry rejects unrelated humanlayer mentions
+ok - fm-harness.sh: a structural humanlayer ancestor outranks a retained foreign marker
+ok - control-lib: humanlayer's interrupt is C-c, its exit is a key not a command, and it refuses secondmates
+ok - busy-lib: the humanlayer anchor classifies idle, busy, and unknown from the pinned composer row
+ok - busy-lib: the humanlayer idle anchor tolerates trailing whitespace
+ok - composer-lib: the humanlayer delivery guard refuses ambiguous output and honors FM_BUSY_REGEX
+ok - fm-spawn: humanlayer launches bare with the codex provider, waits for readiness, and delivers its brief pointer
+ok - fm-spawn: humanlayer omits max from the launch but records it in task metadata
+ok - fm-spawn: humanlayer maps xhigh onto --thinking, which the provider accepts
+ok - fm-spawn: humanlayer never sends the brief pointer before an observable ready signal, and tears down the created endpoint on failure
+ok - fm-spawn: humanlayer refuses loudly when brief delivery cannot be confirmed, and tears down the created endpoint
+ok - fm-spawn: humanlayer refuses loudly when the executable is absent
+ok - fm-spawn: humanlayer cannot be launched as a secondmate, the muse/gemini/agy boundary
+ok - fm-spawn: humanlayer refuses loudly when brief delivery cannot be confirmed, and tears down the created endpoint
+ok - HumanLayer retains delivery evidence across scrolling and honors confirmed submissions
+ok - HumanLayer activity is scoped to live tool descendants of the identified worker
+ok - the herdr busy probe proves tool activity through the shared descendant walk

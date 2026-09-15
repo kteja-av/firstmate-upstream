@@ -1,0 +1,10 @@
+scaffolded: /Users/krishnateja/.no-mistakes/worktrees/8371016727df/01M2KEHMBHW96ED00C6BD23C6B/.test-humanlayer-round2/home/data/r2-ship/brief.md (ship, mode=local-only; replace {TASK} and {FIRSTMATE_SPEC})
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the guarded operation WILL still run.
+●  repair missing watcher supervision with a foreground checkpoint: bin/fm-watch-checkpoint.sh --seconds 180.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+notice: r2-ship ships mode=local-only while the standing posture for project is no-mistakes - less rigor than the captain's standing posture; proceed only on a current explicit captain instruction or an intake judgment you can state
+spawned r2-ship harness=humanlayer kind=ship mode=local-only yolo=off window=firstmate:fm-r2-ship worktree=/Users/krishnateja/.no-mistakes/worktrees/8371016727df/01M2KEHMBHW96ED00C6BD23C6B/.test-humanlayer-round2/pool/.treehouse/project-2a576a/2/project

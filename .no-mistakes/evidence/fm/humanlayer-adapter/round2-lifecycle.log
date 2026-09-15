@@ -1,0 +1,6 @@
+stopped r2-ship harness=humanlayer backend=tmux endpoint=firstmate:fm-r2-ship worktree=/Users/krishnateja/.no-mistakes/worktrees/8371016727df/01M2KEHMBHW96ED00C6BD23C6B/.test-humanlayer-round2/pool/.treehouse/project-2a576a/2/project
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+notice: r2-ship ships mode=local-only while the standing posture for project is no-mistakes - less rigor than the captain's standing posture; proceed only on a current explicit captain instruction or an intake judgment you can state
+relaunched r2-ship harness=humanlayer from=humanlayer model=default effort=low backend=tmux endpoint=firstmate:fm-r2-ship worktree=/Users/krishnateja/.no-mistakes/worktrees/8371016727df/01M2KEHMBHW96ED00C6BD23C6B/.test-humanlayer-round2/pool/.treehouse/project-2a576a/2/project
+stopped r2-scout harness=humanlayer backend=tmux endpoint=firstmate:fm-r2-scout worktree=/Users/krishnateja/.no-mistakes/worktrees/8371016727df/01M2KEHMBHW96ED00C6BD23C6B/.test-humanlayer-round2/pool/.treehouse/project-2a576a/1/project
+stopped r2-ship harness=humanlayer backend=tmux endpoint=firstmate:fm-r2-ship worktree=/Users/krishnateja/.no-mistakes/worktrees/8371016727df/01M2KEHMBHW96ED00C6BD23C6B/.test-humanlayer-round2/pool/.treehouse/project-2a576a/2/project

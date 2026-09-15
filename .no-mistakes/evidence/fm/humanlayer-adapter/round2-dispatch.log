@@ -1,0 +1,18 @@
+Configured humanlayer -> humanlayer
+Configured codex -> codex
+Refusal for cmux: error: unsupported backend for HumanLayer dispatch: cmux (supported: tmux, herdr)
+Refusal for zellij: error: unsupported backend for HumanLayer dispatch: zellij (supported: tmux, herdr)
+Refusal for orca: error: backend=orca selected but the 'orca' CLI is not installed
+error: humanlayer is a verified crewmate/scout adapter only and cannot run a secondmate; it has no primary supervision protocol. Select a harness verified for secondmates.
+spawned r2-scout harness=humanlayer kind=scout window=firstmate:fm-r2-scout worktree=/Users/krishnateja/.no-mistakes/worktrees/8371016727df/01M2KEHMBHW96ED00C6BD23C6B/.test-humanlayer-round2/pool/.treehouse/project-2a576a/1/project
+window=firstmate:fm-r2-scout
+endpoint_task_id=r2-scout
+worktree=/Users/krishnateja/.no-mistakes/worktrees/8371016727df/01M2KEHMBHW96ED00C6BD23C6B/.test-humanlayer-round2/pool/.treehouse/project-2a576a/1/project
+project=/Users/krishnateja/.no-mistakes/worktrees/8371016727df/01M2KEHMBHW96ED00C6BD23C6B/.test-humanlayer-round2/project
+harness=humanlayer
+kind=scout
+tasktmp=/tmp/fm-r2-scout
+model=default
+effort=low
+spawn_gen=s1789508067.25219.6252
+terminal=80x24

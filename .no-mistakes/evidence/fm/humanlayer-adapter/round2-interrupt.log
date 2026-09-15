@@ -1,0 +1,2 @@
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+interrupt-delivered r2-scout harness=humanlayer backend=tmux verified=agent-alive cancel=unconfirmed

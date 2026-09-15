@@ -1,0 +1,9 @@
+backend=cmux
+error: unsupported backend for HumanLayer dispatch: cmux (supported: tmux, herdr)
+exit=1
+backend=orca
+error: unsupported backend for HumanLayer dispatch: orca (supported: tmux, herdr)
+exit=1
+backend=zellij
+error: unsupported backend for HumanLayer dispatch: zellij (supported: tmux, herdr)
+exit=1

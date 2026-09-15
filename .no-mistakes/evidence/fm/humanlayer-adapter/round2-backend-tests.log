@@ -1,0 +1,13 @@
+ok - tmux HumanLayer submission requires an affirmatively empty composer
+ok - herdr HumanLayer submission requires an affirmatively empty composer
+ok - tmux accepts only the top-anchored fresh-launch banner and empty composer
+ok - herdr accepts only the top-anchored fresh-launch banner and empty composer
+ok - tmux preserves completion through usage furniture and rejects new drafts
+ok - herdr preserves completion through usage furniture and rejects new drafts
+ok - tmux preserves completion through usage furniture and rejects new drafts
+ok - herdr preserves completion through usage furniture and rejects new drafts
+ok - herdr confirms current HumanLayer responses without generic composer state
+ok - herdr confirms overlapping captures without borrowing historical responses
+ok - cmux refuses HumanLayer dispatch regardless of screen content
+ok - orca refuses HumanLayer dispatch regardless of screen content
+ok - zellij refuses HumanLayer dispatch regardless of screen content

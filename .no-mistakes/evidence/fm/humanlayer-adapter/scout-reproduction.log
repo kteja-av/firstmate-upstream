@@ -1,0 +1,2 @@
+error: humanlayer brief pointer delivery was not confirmed in window firstmate:fm-hl-scout2; inspect window firstmate:fm-hl-scout2
+warning: leaving task hl-scout2's slot claim on /Users/krishnateja/.no-mistakes/worktrees/8371016727df/01M2KEHMBHW96ED00C6BD23C6B/.test-humanlayer/pool/.treehouse/project-293d83/1/project in place; the Treehouse project lock is no longer held, so the next spawn's claim replaces it
