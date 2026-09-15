@@ -12,7 +12,7 @@ Verified as a CREWMATE and SCOUT adapter only; `../../../../../bin/fm-spawn.sh` 
 | Launch | `humanlayer codelayer --provider codex`, bare: there is no interactive launch flag that carries a prompt (`--prompt` runs non-interactively and exits at turn end), so the brief pointer is submitted through the composer after the readiness gate - the kimi/rovo launch-then-confirm shape. |
 | Provider | `--provider codex` is the verified provider; codelayer's provider auto-runs tool calls with no approval prompt (verified live: bash commands and file writes landed ungated), which an unattended crewmate needs. |
 | Busy state | No hook or plugin writer, so nothing is armed or seeded; `bin/fm-busy-lib.sh` folds the screen verdict as `humanlayer-anchor` and can prove tool-call activity from live tool descendants of an identified foreground HumanLayer process (`humanlayer-process` on tmux; herdr feeds the same walk from `pane process-info` pids plus the system process table, because herdr's foreground list does not include tool children). Pure model thinking has no child process on any backend and stays unknown. |
-| Idle anchor | `bin/fm-humanlayer-lib.sh` owns classification: the final non-blank row must be bare `>`, with no unresolved draft history; only a styled vendor completion row clears earlier prompt history. Plain transcript-shaped draft content cannot prove completion, and captures without that styling can remain unknown after a settled turn. |
+| Idle anchor | `bin/fm-humanlayer-lib.sh` owns classification: the final non-blank row must be bare `>`, with no unresolved draft history; fresh-launch banners must be anchored at the top of the capture immediately before the composer, while retiring earlier prompt history requires a styled vendor completion row, whose provenance survives the usage footer. Draft continuation rows and truncated captures without positive provenance remain unknown; a plain completion marker cannot clear draft history. |
 | Turn end | No turn-end hook or notification touch exists; completion arrives through the worker status protocol, and the bare `>` anchor returning is the pane-side evidence. |
 | Exit | Use the lifecycle control plane; [agent control](../../../../../docs/agent-control.md#verbs) owns its guarded key-exit contract. |
 | Interrupt | Use the lifecycle control plane; [agent control](../../../../../docs/agent-control.md#verbs) owns the busy precondition and cancellation boundary. |
@@ -22,7 +22,7 @@ Verified as a CREWMATE and SCOUT adapter only; `../../../../../bin/fm-spawn.sh` 
 | Resume | No verified pane-resume contract; use deterministic relaunch. |
 | Model | `--model <id>`; the codex provider defaults to `gpt-6-astra`. No reachable model-listing command exists (`humanlayer agents auth` manages authentication only), so a requested id launches unvalidated. |
 | Effort | `--thinking low|medium|high|xhigh` (verified low and xhigh live); `max` is known-bad - the provider rejects it with "OpenAI Responses does not support reasoning effort max" - so it stays in task metadata under the record-and-omit contract. |
-| Composer | The generic shape classifier reads the borderless composer as `unknown`; HumanLayer submission requires the adapter-specific idle verdict at the shared backend boundary. On tmux, confirmation requires the submitted text echo followed by provider output; a missing idle anchor alone is not delivery proof. |
+| Composer | The generic shape classifier reads the borderless composer as `unknown`; HumanLayer submission requires the adapter-specific idle verdict at the shared backend boundary. Confirmation requires evidence from the current submission as described under [Steering precondition](#steering-precondition); a missing idle anchor alone is not delivery proof. |
 | Multi-line | A multi-line steer typed with literal newlines lands in the composer without submitting and one `Enter` submits it as a single message (verified live). |
 
 ## Trust, approvals, and provider auth
@@ -36,6 +36,9 @@ The provider authenticated through the captain's own HumanLayer setup (`humanlay
 
 Text typed while a turn runs lands in a hidden input buffer and `Enter` does not queue it: the message was silently lost when the turn completed (verified live, humanlayer 0.31.0 - no echo row, no response, no error).
 The shared backend submission boundary refuses injection unless the HumanLayer classifier proves idle, for direct sends and task-inbox doorbells alike.
+On tmux, submission captures output with `pipe-pane` from before typing through the final confirmation decision, preserving the current prompt and provider-output evidence beyond scrollback loss; an existing pane pipe causes deferral.
+Herdr, cmux, and Orca compare subsequent captures against the pre-submission baseline, allowing overlapping captures after scrolling while requiring the current prompt and provider-output evidence to remain visible.
+Historical responses cannot confirm a repeated instruction; ambiguous or lost evidence returns unknown.
 A deferred durable inbox record remains available for the watcher's re-ring ladder; enqueue success is not delivery proof.
 Never treat a busy humanlayer worker as safely steerable; wait for a verified idle verdict or use the control plane.
 

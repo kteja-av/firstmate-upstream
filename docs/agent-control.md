@@ -46,7 +46,7 @@ The clear is refused before anything is sent when the recorded backend cannot de
 `exit` reads the composer's state before typing the exit command and requires the exact `empty` verdict; a `pending` verdict refuses by naming the pending text, and any other verdict (`unknown`, `pending-unproven`, or an unreadable read) refuses as not proven empty, matching the fail-safe contract every other consumer that can overwrite composer input follows.
 
 HumanLayer uses Ctrl+C both to interrupt running work and to exit at idle; typed `/quit` and `/exit` are ordinary model input.
-HumanLayer interruption on tmux accepts live tool descendants of the identified foreground worker as process activity evidence; plain terminal text alone cannot authorize Ctrl+C.
+HumanLayer interruption requires the busy evidence defined in [its adapter reference](../.agents/skills/harness-adapters/references/harness/humanlayer.md#operating-facts); plain terminal text alone cannot authorize Ctrl+C.
 Exit and relaunch cancel a worker with that evidence, then wait for the idle composer before sending the exit key; genuinely unidentified activity is refused.
 The interrupt boundary refuses idle or unknown state because Ctrl+C could exit the worker.
 If activity becomes provably busy while exit or relaunch is waiting, the same guarded interrupt path cancels it before waiting for idle again.

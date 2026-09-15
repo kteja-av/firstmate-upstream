@@ -7,10 +7,11 @@
 # machine-readable semantic source it owns, classification always exposes
 # which source produced it, and missing, malformed, stale, unsupported, or
 # unverified semantic data is UNKNOWN - never idle. Endpoint death is the only
-# process-level override and yields dead, never busy. Child processes, CPU,
-# process sleep state, marker mtimes, and the old global UI-regex OR are not
-# state signals here; state/<id>.turn-ended files remain wake NOTIFICATIONS
-# owned by the watcher, not current-state truth.
+# general process-level override and yields dead, never busy. The scoped
+# HumanLayer tool-activity exception is described below; CPU, process sleep
+# state, marker mtimes, and the old global UI-regex OR are not state signals.
+# state/<id>.turn-ended files remain wake NOTIFICATIONS owned by the watcher,
+# not current-state truth.
 #
 # Record file: state/<id>.busy-state - exactly one line, atomically replaced
 # by bin/fm-busy-event.sh (the only writer):
@@ -58,7 +59,7 @@
 #      muse session-log and cursor transcript pull sources, then the
 #      Grok/Rovo/AGY temporary regex fallbacks classify a grok, rovo, or agy
 #      task from its rendered tail; the humanlayer anchor classifies a
-#      humanlayer task via fm_humanlayer_screen_state, with tmux tool
+#      humanlayer task via fm_humanlayer_screen_state, with tmux/herdr tool
 #      activity as a busy fallback, then unknown missing
 #   5. malformed, stale, or untrusted records -> unknown, never a fallback
 # Grok, Rovo, and AGY are the ONLY positive rendered-marker classifications
@@ -69,7 +70,7 @@
 # each is scoped to its own harness= and can never classify another adapter.
 # HumanLayer also lacks hooks; fm-humanlayer-lib.sh owns its conservative
 # idle-screen classifier. Rendered text cannot prove HumanLayer busy;
-# only the tmux process-activity fallback can supply that verdict. The delivery
+# only the tmux/herdr process-activity fallback can supply that verdict. The delivery
 # guards in bin/fm-composer-lib.sh match rendered footers for submit
 # acknowledgement and away-mode supervisor injection only; neither is a
 # recorded worker state source.
@@ -890,7 +891,7 @@ fm_busy_humanlayer_tail_idle() {
 # fm_busy_classify: semantic classification for a task whose endpoint the
 # caller has already established as present. Prints "<verdict> <source>":
 # busy|idle|unknown plus the producing source (see header). Never classifies
-# process liveness, but HumanLayer may probe tool activity on tmux.
+# process liveness, but HumanLayer may probe tool activity on tmux and herdr.
 # <tail40> is optional pre-captured plain output used only by
 # the grok, rovo, agy, and humanlayer arms; when absent each captures through
 # fm_backend_capture if available, else reports unknown capture-failed.
@@ -1049,13 +1050,10 @@ fm_busy_classify() {  # <backend> <target> <harness> <id> <state-dir> [tail40]
       if [ "$out" != idle ] && command -v fm_backend_source >/dev/null 2>&1; then
         # A non-idle screen alone cannot separate a running turn from a
         # parked draft, so each backend that can observe the pane's
-        # foreground processes contributes its own busy proof: tmux walks
-        # the pane tty's process table for tool children of the TUI; herdr
-        # reads the same fact from its recorded foreground process set
-        # (`other` = a non-shell, non-harness process, which a humanlayer
-        # pane only shows while a tool call runs). Pure model thinking has
-        # no child process on either backend and stays unknown, the same
-        # partial coverage the grok/rovo/agy arms accept.
+        # foreground processes contributes its own busy proof through the
+        # shared descendant walk. Backend helpers own how the foreground
+        # HumanLayer pids are obtained; tool children come from the system
+        # process table. Pure model thinking has no tool child and stays unknown.
         case "$backend" in
           tmux)
             if fm_backend_source tmux && fm_backend_tmux_humanlayer_busy "$target"; then
