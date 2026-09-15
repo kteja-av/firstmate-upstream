@@ -3422,20 +3422,6 @@ fm_backend_herdr_agent_status_raw() {  # <session> <pane_id>
 # fm_backend_herdr_humanlayer_busy: busy evidence for a HumanLayer worker
 # pane, in the same shape as bin/backends/tmux.sh's
 # fm_backend_tmux_humanlayer_busy. The styled screen fold cannot distinguish
-# a running turn from a parked draft, so the process view decides: herdr's
-# recorded foreground process set reads `other` exactly when a non-shell,
-# non-harness process (the tool call's child) holds the pane's foreground
-# group, which only happens while the worker's tool call runs. The TUI alone
-# reads `agent` and proves nothing about the turn, so it is never busy.
-fm_backend_herdr_humanlayer_busy() {  # <target>
-  fm_backend_herdr_target_ready "$1" || return 1
-  [ "$(fm_backend_herdr_pane_process_state \
-    "$FM_BACKEND_HERDR_SESSION" "$FM_BACKEND_HERDR_PANE")" = other ]
-}
-
-# fm_backend_herdr_humanlayer_busy: busy evidence for a HumanLayer worker
-# pane, in the same shape as bin/backends/tmux.sh's
-# fm_backend_tmux_humanlayer_busy. The styled screen fold cannot distinguish
 # a running turn from a parked draft, so the process view decides. herdr's
 # `pane process-info` lists the pane's foreground processes by name (the TUI
 # is there in both states) but not the tool call's children, so the TUI's

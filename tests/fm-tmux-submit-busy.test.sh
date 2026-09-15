@@ -353,3 +353,57 @@ test_failed_baseline_capture_keeps_busy_unknown_unconfirmed
 test_busy_pane_ambiguous_pending_retries_without_conversion
 test_unrecognized_state_skips_busy_conversion
 test_claude_busy_signature_uses_real_capture_shapes
+
+
+test_humanlayer_continuation_and_scrollback() (
+  local verdict real_tmux socket target mode screen
+  verdict=$(printf '>\n>\n' | fm_humanlayer_screen_state)
+  [ "$verdict" = unknown ] || fail "blank first line plus literal prompt continuation must defer"
+  verdict=$(printf '>\n>\n\033[38;2;34;197;94m[Done]\033[39m complete\n>\n' | fm_humanlayer_screen_state)
+  [ "$verdict" = idle ] || fail "genuine completion must retire continuation state"
+  real_tmux=$(command -v tmux) || fail "tmux required for scrollback regression"
+  socket="fm-submit-history-$$"
+  trap '"$real_tmux" -L "$socket" kill-server 2>/dev/null || true' EXIT
+  tmux() { "$real_tmux" -L "$socket" "$@"; }
+  cat > "$TMP_ROOT/scroll-worker.py" <<'PYWORKER'
+import sys, tty
+print(">", flush=True)
+tty.setraw(sys.stdin.fileno())
+text = ""
+while True:
+    char = sys.stdin.read(1)
+    if char in "\r\n":
+        if sys.argv[1] == "accepted":
+            print("\r\n> " + text + "\r\n[Tool] bash command=produce-output", flush=True)
+            for i in range(2000):
+                print("\r\noutput " + str(i), end="")
+            sys.stdout.flush()
+        else:
+            print("\r\n> " + text, flush=True)
+        text = ""
+    else:
+        text += char
+PYWORKER
+  tmux -f /dev/null new-session -d -s submit
+  tmux set-option -g history-limit 20
+  for mode in accepted swallowed; do
+    target="submit:$mode"
+    tmux new-window -d -t submit -n "$mode" "python3 '$TMP_ROOT/scroll-worker.py' '$mode'"
+    for _ in 1 2 3 4 5 6 7 8 9 10; do
+      screen=$(tmux capture-pane -p -t "$target")
+      [ "$(printf '%s' "$screen" | fm_humanlayer_screen_state)" != idle ] || break
+      sleep 0.1
+    done
+    verdict=$(fm_tmux_submit_core "$target" instruction 3 0.3 0.1 '' humanlayer)
+    if [ "$mode" = accepted ]; then
+      [ "$verdict" = empty ] || fail "submission evidence must survive lost history: $verdict"
+      screen=$(tmux capture-pane -p -t "$target" -S -)
+      printf '%s' "$screen" | fm_humanlayer_submission_seen instruction && fail "fixture must lose the prompt from retained history"
+    else
+      [ "$verdict" = unknown ] || fail "unsubmitted echo must not confirm delivery"
+    fi
+    [ "$(tmux display-message -p -t "$target" '#{pane_pipe}')" = 0 ] || fail "submission capture must be released"
+  done
+  pass "HumanLayer rejects bare continuations and confirms delivery beyond retained history"
+)
+test_humanlayer_continuation_and_scrollback

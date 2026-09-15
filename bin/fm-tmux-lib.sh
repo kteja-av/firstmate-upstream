@@ -243,8 +243,17 @@ fm_pane_is_busy() {  # <target> [harness]
 # fm_tmux_submit_enter_core caller, or a pane already busy before typing) an
 # `unknown` verdict is preserved untouched: busy conversion without the
 # transition evidence could mark an undelivered message delivered.
-fm_tmux_submit_enter_core() {  # <target> <retries> <enter-sleep> [baseline-idle] [harness] [text] [baseline-screen]
+fm_tmux_submit_enter_core() (  # <target> <retries> <enter-sleep> [baseline-idle] [harness] [text] [baseline-screen]
   local target=$1 retries=$2 sleep_s=$3 baseline_idle=${4:-} harness=${5:-} text=${6:-} baseline_screen=${7:-} i=0 j state busy_state screen
+  local evidence='' pipe_state evidence_command
+  if [ "$harness" = humanlayer ]; then
+    pipe_state=$(tmux display-message -p -t "$target" '#{pane_pipe}' 2>/dev/null) || { printf 'unknown'; return 0; }
+    [ "$pipe_state" != 1 ] || { printf 'unknown'; return 0; }
+    evidence=$(mktemp "${TMPDIR:-/tmp}/fm-humanlayer-submit.XXXXXX") || { printf 'unknown'; return 0; }
+    trap 'tmux pipe-pane -t "$target" 2>/dev/null; rm -f "$evidence"' EXIT
+    printf -v evidence_command 'cat > %q' "$evidence"
+    tmux pipe-pane -O -t "$target" "$evidence_command" 2>/dev/null || { printf 'unknown'; return 0; }
+  fi
   while :; do
     tmux send-keys -t "$target" Enter 2>/dev/null || {
       if [ "$harness" = humanlayer ]; then
@@ -258,7 +267,8 @@ fm_tmux_submit_enter_core() {  # <target> <retries> <enter-sleep> [baseline-idle
       while [ "$j" -lt "$retries" ]; do
         screen=$(tmux capture-pane -p -J -t "$target" -S - 2>/dev/null) || screen=
         if [ "$baseline_idle" = 1 ] && [ -n "$text" ] && [ "$screen" != "$baseline_screen" ] \
-          && printf '%s' "$screen" | fm_humanlayer_submission_seen "$text"; then
+          && { printf '%s' "$screen" | fm_humanlayer_submission_seen "$text" \
+            || fm_composer_strip_ansi < "$evidence" | tr -d '\r' | fm_humanlayer_submission_seen "$text"; }; then
           printf 'empty'
           return 0
         fi
@@ -300,7 +310,7 @@ fm_tmux_submit_enter_core() {  # <target> <retries> <enter-sleep> [baseline-idle
   busy_state=idle
   fm_pane_is_busy "$target" "$harness" && busy_state=busy
   fm_composer_queued_enter_verdict "$state" "$busy_state"
-}
+)
 
 fm_tmux_submit_core() {  # <target> <text> <retries> <enter-sleep> <settle> [expected-label] [harness]
   local target=$1 text=$2 retries=$3 sleep_s=$4 settle=$5 harness=${7:-} baseline_idle='' baseline_state baseline_screen=''
