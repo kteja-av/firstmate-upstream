@@ -639,6 +639,7 @@ SH
   assert_not_contains "$waiting" '(nothing)' "an unavailable held set was also reported as empty"
   out=$(run_return "$dir" check) || fail "catch-up did not clear after the held-set reader recovered: $out"
   assert_contains "$out" 'catch-up clear' "the recovered held-set reader did not clear catch-up"
+  assert_not_contains "$out" 'held set unreadable:' "the recovered held-set reader published a stale refusal"
   [ ! -e "$gate" ] || fail "the recovered held-set reader left the return gate behind"
   pass "an unavailable held listing gates catch-up until a successful reread"
 }

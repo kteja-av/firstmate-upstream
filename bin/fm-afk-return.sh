@@ -675,8 +675,7 @@ EOF
   # A builtin printf that fails on an unwritable stdout leaves its bytes in
   # bash's stdio buffer, and the next command substitution flushes them into
   # its capture, corrupting the run before the publication check can fire.
-  if ! render_return_brief "$evidence" "$blockers" "$since" > "$brief" ||
-    ! print_evidence "$evidence" > "$published_evidence"; then
+  if ! render_return_brief "$evidence" "$blockers" "$since" > "$brief"; then
     printf 'fm-afk-return: return rendering failed; catch-up remains pending\n' >&2
     rm -f "$evidence" "$blockers" "$drain_err" "$brief" "$published_evidence"
     return 3
@@ -686,6 +685,11 @@ EOF
     lifecycle_ok=0
   else
     remove_evidence_prefix lifecycle 'held set unreadable:' "$evidence" || lifecycle_ok=0
+  fi
+  if ! print_evidence "$evidence" > "$published_evidence"; then
+    printf 'fm-afk-return: return rendering failed; catch-up remains pending\n' >&2
+    rm -f "$evidence" "$blockers" "$drain_err" "$brief" "$published_evidence"
+    return 3
   fi
   if [ "$lifecycle_ok" -ne 1 ] || grep -q "^blocker$(printf '\t')" "$blockers"; then
     cat "$brief" >&1 || true
