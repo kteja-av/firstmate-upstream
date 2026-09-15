@@ -369,7 +369,7 @@ test_humanlayer_continuation_and_scrollback() (
 import sys, tty, time
 if sys.argv[1] == "repeated":
     print("> instruction\n[Tool] bash\n\033[38;2;34;197;94m[Done]\033[39m complete", flush=True)
-print(">", flush=True)
+print("> ", end="", flush=True)
 tty.setraw(sys.stdin.fileno())
 text = ""
 while True:
@@ -387,7 +387,7 @@ while True:
     else:
         text += char
         # HumanLayer renders input while typing, without echoing it on Enter.
-        print("\r\n> " + text, end="", flush=True)
+        print(char, end="", flush=True)
 PYWORKER
   tmux -f /dev/null new-session -d -s submit
   tmux set-option -g history-limit 20

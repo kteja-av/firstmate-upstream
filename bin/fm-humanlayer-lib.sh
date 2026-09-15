@@ -48,15 +48,17 @@ fm_humanlayer_capture() {  # <backend> <target> [expected-label]
   esac
 }
 
+# A pipe attached at a verified empty composer starts after its existing >
+# prefix. Only that stream may match an unprefixed first row.
 fm_humanlayer_submission_seen() {
-  FM_HL_SUBMIT_TEXT="$1" awk '
+  FM_HL_SUBMIT_TEXT="$1" FM_HL_EMPTY_COMPOSER="${2:-}" awk '
     BEGIN { count = split(ENVIRON["FM_HL_SUBMIT_TEXT"], text, "\n") }
     submitted && remaining > 0 {
       if ($0 != text[count - remaining + 1]) submitted = 0
       remaining--
       next
     }
-    $0 == "> " text[1] { submitted = 1; remaining = count - 1; confirmed = 0; next }
+    $0 == "> " text[1] || (NR == 1 && ENVIRON["FM_HL_EMPTY_COMPOSER"] == "1" && $0 == text[1]) { submitted = 1; remaining = count - 1; confirmed = 0; next }
     confirmed { next }
     /^>[[:space:]]*$/ { next }
     /^>/ { submitted = ($0 == "> " text[1]); remaining = count - 1; confirmed = 0; next }

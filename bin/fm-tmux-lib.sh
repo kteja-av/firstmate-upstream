@@ -259,7 +259,7 @@ fm_tmux_submit_enter_core() (  # <target> <retries> <enter-sleep> [baseline-idle
       j=0
       while [ "$j" -lt "$confirm_polls" ]; do
         if [ "$baseline_idle" = 1 ] && [ -n "$text" ] \
-          && fm_composer_strip_ansi < "$evidence" | tr -d '\r' | fm_humanlayer_submission_seen "$text"; then
+          && fm_composer_strip_ansi < "$evidence" | tr -d '\r' | fm_humanlayer_submission_seen "$text" "$baseline_idle"; then
           printf 'empty'
           return 0
         fi
