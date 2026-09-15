@@ -431,3 +431,32 @@ printf '> first\nsecond\n[Done] complete\n> first\nwrong\n[Tool] bash\n' | fm_hu
 [ "$(printf 'retained log row\n\033[38;2;34;197;94m[Done]\033[39m complete\n>\n' | fm_humanlayer_screen_state)" = idle ] \
   || fail "styled completion must establish idle provenance after truncation"
 pass "HumanLayer rejects historical delivery proof and ambiguous truncated drafts"
+
+
+# Replay the readline redraw sequence captured from HumanLayer v0.31.0 at
+# 80 columns. These bytes are terminal output, not implementation snapshots.
+test_humanlayer_wrapped_pipe_delivery() (
+  local prompt verdict mode
+  prompt='Read the brief at /Users/krishnateja/.no-mistakes/worktrees/8371016727df/01M2KEHMBHW96ED00C6BD23C6B/.test-humanlayer/machine-a/data/hl-scout2/launch-brief.md and follow it exactly.'
+  tmux() { return 0; }
+  for mode in accepted swallowed changed erased; do
+    {
+      printf '%s\033[1G\033[0J> %s \033[1G%s\033[1A\033[1G\033[0J> %s  \033[1G%s' \
+        "${prompt:0:77}" "${prompt:0:78}" "${prompt:78:79}" "${prompt:0:157}" "${prompt:158}"
+      case "$mode" in
+        accepted) printf '\r\r\n\033[38;2;59;130;246m[Tool]\033[39m read\r\n' ;;
+        swallowed) ;;
+        changed) printf 'x\r\n[Tool] read\r\n' ;;
+        erased) printf '\033[1G\033[0J> different instruction\r\n[Tool] read\r\n' ;;
+      esac
+    } > "$TMP_ROOT/redraw.ansi"
+    verdict=$(fm_tmux_submit_enter_core fixture 1 0 1 humanlayer "$prompt" "$TMP_ROOT/redraw.ansi")
+    if [ "$mode" = accepted ]; then
+      [ "$verdict" = empty ] || fail "wrapped current submission must confirm: $verdict"
+    else
+      [ "$verdict" = unknown ] || fail "$mode redraw must not confirm: $verdict"
+    fi
+  done
+  pass "HumanLayer pipe redraws confirm only the exact submitted instruction"
+)
+test_humanlayer_wrapped_pipe_delivery || exit 1

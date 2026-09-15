@@ -65,6 +65,22 @@ fm_humanlayer_capture() {  # <backend> <target> [expected-label]
   esac
 }
 
+# HumanLayer readline redraws the composer with erase-to-end-of-screen and
+# inserts one padding space before column-one moves at soft wraps. Preserve
+# the final redraw and its exact text before stripping the remaining ANSI;
+# stripping first concatenates erased drafts and retains the wrap padding.
+# This normalizes raw pipe output only, never an already-rendered capture.
+fm_humanlayer_pipe_text() {
+  awk '
+    BEGIN { esc = sprintf("%c", 27) }
+    {
+      sub("^.*" esc "\\[0J", "")
+      gsub(" " esc "\\[1G", "")
+      print
+    }
+  ' | fm_composer_strip_ansi | tr -d '\r'
+}
+
 # A pipe attached at a verified empty composer starts after its existing >
 # prefix. Only that stream may match an unprefixed first row.
 fm_humanlayer_submission_seen() {
