@@ -125,10 +125,10 @@ done
 pass "direct and inbox steering preserve real multiline drafts ending with >"
 
 prompt="Add 12345 and 67890. Reply with exactly the sum and nothing else"
-"$REAL_TMUX" -L "$SOCKET" send-keys -t "$TARGET" -l "$prompt" \
-  || fail "could not type the launch prompt"
-"$REAL_TMUX" -L "$SOCKET" send-keys -t "$TARGET" Enter \
-  || fail "could not submit the launch prompt"
+verdict=$(FM_HUMANLAYER_CONFIRM_POLLS=120 FM_HUMANLAYER_CONFIRM_INTERVAL=0.5 \
+  fm_backend_send_text_submit tmux "$TARGET" "$prompt" 1 0.2 0.1 '' humanlayer)
+[ "$verdict" = empty ] || fail "shared submission did not confirm the initial instruction: $verdict"
+pass "the shared submission boundary confirms the initial instruction"
 
 busy_live=
 for _ in $(seq 1 120); do

@@ -108,15 +108,16 @@ done
 banner=$'[codex-provider] using sse transport http://localhost/session\ncodelayer - provider: codex, model: gpt-6-astra'
 for backend in tmux herdr cmux orca zellij; do
   capture_ok=yes
-  fixture_screen="$banner"$'\n>\n'
-  submissions=0
-  rm -f "$TEST_TMP/submitted"
-  fm_backend_send_text_submit "$backend" endpoint instruction 1 0 0 worker-label humanlayer >/dev/null \
-    || fail "$backend must accept the verified fresh-launch composer"
-  [ "$submissions" = 1 ] || fail "$backend must deliver the fresh-launch instruction once"
-  fm_task_inbox_ring "$backend" endpoint record worker-label humanlayer \
-    || fail "$backend must ring the verified fresh-launch composer"
-  for fixture_screen in "$banner"$'\nretained log\n>' $'retained log\n'"$banner"$'\n>' "$banner"$'\n> draft\n>' "$banner"$'\n>\n>' $'codelayer - provider: codex, model: gpt-6-astra\n>' "$banner"$'\n\n>'; do
+  for fixture_screen in "$banner"$'\n>\n' "$banner"$'\n\n>\n'; do
+    submissions=0
+    rm -f "$TEST_TMP/submitted"
+    fm_backend_send_text_submit "$backend" endpoint instruction 1 0 0 worker-label humanlayer >/dev/null \
+      || fail "$backend must accept the verified fresh-launch composer"
+    [ "$submissions" = 1 ] || fail "$backend must deliver the fresh-launch instruction once"
+    fm_task_inbox_ring "$backend" endpoint record worker-label humanlayer \
+      || fail "$backend must ring the verified fresh-launch composer"
+  done
+  for fixture_screen in "$banner"$'\nretained log\n>' $'retained log\n'"$banner"$'\n>' "$banner"$'\n> draft\n>' "$banner"$'\n>\n>' $'codelayer - provider: codex, model: gpt-6-astra\n>'; do
     submissions=0
     rm -f "$TEST_TMP/submitted"
     if fm_backend_send_text_submit "$backend" endpoint instruction 1 0 0 worker-label humanlayer >/dev/null; then

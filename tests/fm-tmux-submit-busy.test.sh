@@ -378,16 +378,16 @@ while True:
         if sys.argv[1] in ("accepted", "delayed"):
             if sys.argv[1] == "delayed":
                 time.sleep(2)
-            print("\r\n> " + text + "\r\n[Tool] bash command=produce-output", flush=True)
+            print("\r\n[Tool] bash command=produce-output", flush=True)
             for i in range(2000):
                 print("\r\noutput " + str(i), end="")
             print("\r\n> example\r\n[Done] complete", flush=True)
             sys.stdout.flush()
-        else:
-            print("\r\n> " + text, flush=True)
         text = ""
     else:
         text += char
+        # HumanLayer renders input while typing, without echoing it on Enter.
+        print("\r\n> " + text, end="", flush=True)
 PYWORKER
   tmux -f /dev/null new-session -d -s submit
   tmux set-option -g history-limit 20
@@ -412,7 +412,7 @@ PYWORKER
   done
   pass "HumanLayer rejects bare continuations and confirms delivery beyond retained history"
 )
-test_humanlayer_continuation_and_scrollback
+test_humanlayer_continuation_and_scrollback || exit 1
 
 
 printf '> instruction\n[Tool] bash\n> example\n[Done] complete\n' | fm_humanlayer_submission_seen instruction \
