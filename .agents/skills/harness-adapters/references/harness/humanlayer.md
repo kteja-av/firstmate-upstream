@@ -51,6 +51,12 @@ No environment marker is promoted: codelayer adds no identity variable of its ow
 The spawn template clears foreign primary markers at the launch boundary as defense in depth, the cursor/agy shape.
 humanlayer is deliberately absent from the session-lock name vocabulary in `../../../../../bin/fm-session-lock-lib.sh`, where muse, gemini, and rovo are also absent: a crewmate-only adapter must never own a home session lock.
 
+## Busy-state arming and turn-end wiring: deliberate gaps
+
+`bin/fm-spawn.sh` deliberately does NOT arm the busy-state contract for humanlayer: arming without a writer would seed a busy record nothing can ever clear (the grok/rovo/agy rule), and humanlayer has no hook surface that could write one. The live proof that this is sufficient: a spawned humanlayer worker read `working - harness busy (humanlayer-process)` from the anchor with no `busy-state` or `busy-gen` file present, and a settled worker classifies through the same anchor without any record. If crew-state ever prints `unknown missing` for a humanlayer task, the caller is running pre-merge scripts without the `humanlayer` classify arm, not reporting a gap in this adapter.
+
+There is also no turn-end wiring: no hook or poller touches `state/<id>.turn-ended`, so a humanlayer turn's end wakes supervision through the worker's own status protocol only (the same shape as the agy and rovo adapters). Supervision for humanlayer tasks is status-log-driven, with the pane anchor supplying current-state truth and the watcher's stale detection covering a wedged worker. The honest alternative - a pane-folding poller writing turn-end touches - would be a new supervision mechanism and is deliberately not invented here.
+
 ## Primary integration
 
 Unsupported and unverified.

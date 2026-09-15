@@ -2047,4 +2047,5 @@ A trivial ship task was spawned through `bin/fm-spawn.sh --harness humanlayer` o
 5. `bin/fm-control.sh <id> exit` stopped the agent through the verified `Ctrl+C` exit key.
 
 `FM_HUMANLAYER_SIGNALS_LIVE=1 bash tests/fm-humanlayer-signals-live-e2e.test.sh` refreshes the TUI-surface evidence; it submits real prompts, so it stays opt-in.
+Crew-state on this head was re-verified live against a spawned worker with NO busy-state record or gen armed: mid-turn it read `working - source: pane - harness busy (humanlayer-process)`, and after the settled turn the anchor classified the pane, with the status log supplying the worker state per the normal contract.
 The portable regressions `tests/fm-humanlayer-harness.test.sh` pin the detection, anchor classification, and control tables without any installed harness.
