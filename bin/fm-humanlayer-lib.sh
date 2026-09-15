@@ -90,7 +90,7 @@ fm_humanlayer_processes_active() {
 
 fm_humanlayer_backend_submit() {
   local backend=$1 baseline=$2 target=$3 text=$4 retries=$5 interval=$6 settle=$7 label=${8:-}
-  local screen prefix i=0
+  local screen prefix overlap i=0
   . "$FM_BACKEND_LIB_DIR/fm-composer-lib.sh"
   prefix=$(printf '%s' "$baseline" | fm_composer_strip_ansi | tr -d '\r')
   prefix=${prefix%>*}
@@ -103,14 +103,23 @@ fm_humanlayer_backend_submit() {
     sleep "$interval"
     if screen=$(fm_humanlayer_capture "$backend" "$target" "$label"); then
       screen=$(printf '%s' "$screen" | fm_composer_strip_ansi | tr -d '\r')
-      case "$screen" in
-        "$prefix"*)
-          if printf '%s' "${screen#"$prefix"}" | fm_humanlayer_submission_seen "$text"; then
-            printf 'empty'
-            return 0
-          fi
-          ;;
-      esac
+      overlap=$prefix
+      while :; do
+        case "$screen" in
+          "$overlap"*)
+            if printf '%s' "${screen#"$overlap"}" | fm_humanlayer_submission_seen "$text"; then
+              printf 'empty'
+              return 0
+            fi
+            break
+            ;;
+        esac
+        case "$overlap" in
+          *$'\n'*) overlap=${overlap#*$'\n'} ;;
+          *) break ;;
+        esac
+        [ -n "$overlap" ] || break
+      done
     fi
     i=$((i + 1))
   done

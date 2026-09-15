@@ -10,7 +10,11 @@ capture_fixture() {
   [ "$1" = endpoint ] && [ "$3" = worker-label ] || return 1
   [ "$capture_ok" = yes ] || return 1
   if [ -f "$TEST_TMP/response" ]; then
-    cat "$TEST_TMP/response"
+    if [ "${bounded_capture:-0}" = 1 ]; then
+      tail -n 200 "$TEST_TMP/response"
+    else
+      cat "$TEST_TMP/response"
+    fi
     rm -f "$TEST_TMP/response"
   else
     printf '%s' "$fixture_screen"
@@ -40,6 +44,9 @@ key_fixture() {
       complete) printf '[Assistant] done\n[Done] complete\n>\n' ;;
     esac
   } > "$TEST_TMP/response"
+  if [ "${delivery:-working}" = no-overlap ]; then
+    printf '> instruction\n[Tool] bash command=old\n' > "$TEST_TMP/response"
+  fi
 }
 fm_backend_herdr_send_literal() { literal_fixture "$@"; }
 fm_backend_cmux_send_literal() { literal_fixture "$@"; }
@@ -167,4 +174,22 @@ for backend in herdr cmux orca; do
     [ "$(wc -l < "$TEST_TMP/keys" | tr -d ' ')" = 1 ] || fail "$backend must send Enter once"
   done
   pass "$backend confirms current HumanLayer responses without generic composer state"
+done
+
+
+bounded_capture=1
+for backend in herdr cmux orca; do
+  for delivery in working complete swallowed no-overlap; do
+    fixture_screen=$(for ((row=1; row<=196; row++)); do printf 'history %s\n' "$row"; done
+      printf '> instruction\n[Assistant] old result\n\033[38;2;34;197;94m[Done]\033[39m complete\n>\n')
+    [ "$(printf '%s\n' "$fixture_screen" | wc -l | tr -d ' ')" = 200 ] || fail "baseline must fill the bounded capture"
+    : > "$TEST_TMP/keys"
+    verdict=$(fm_backend_send_text_submit "$backend" endpoint instruction 1 0 0 worker-label humanlayer)
+    case "$delivery" in
+      working|complete) [ "$verdict" = empty ] || fail "$backend must confirm after bounded scroll: $delivery" ;;
+      *) [ "$verdict" = unknown ] || fail "$backend must reject unproven bounded delivery: $delivery" ;;
+    esac
+    [ "$(wc -l < "$TEST_TMP/keys" | tr -d ' ')" = 1 ] || fail "$backend must not resubmit after scrolling"
+  done
+  pass "$backend confirms overlapping captures without borrowing historical responses"
 done
