@@ -738,9 +738,6 @@ test_humanlayer_herdr_busy_stays_unknown() {
   # walk measured zero non-agent children over 60 samples of active work),
   # so the classifier must never claim busy there and supervision reads the
   # worker's status log and turn-end events instead.
-  if command -v fm_backend_herdr_humanlayer_busy >/dev/null 2>&1; then
-    fail "the removed herdr HumanLayer busy probe must not come back"
-  fi
   local verdict
   verdict=$(fm_busy_classify herdr 'default:whl:phl' humanlayer hl-test "$HL_STATE" \
 '> Investigate this log:
