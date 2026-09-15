@@ -59,7 +59,7 @@
 #      muse session-log and cursor transcript pull sources, then the
 #      Grok/Rovo/AGY temporary regex fallbacks classify a grok, rovo, or agy
 #      task from its rendered tail; the humanlayer anchor classifies a
-#      humanlayer task via fm_humanlayer_screen_state, with tmux/herdr tool
+#      humanlayer task via fm_humanlayer_screen_state, with tmux tool
 #      activity as a busy fallback, then unknown missing
 #   5. malformed, stale, or untrusted records -> unknown, never a fallback
 # Grok, Rovo, and AGY are the ONLY positive rendered-marker classifications
@@ -70,7 +70,7 @@
 # each is scoped to its own harness= and can never classify another adapter.
 # HumanLayer also lacks hooks; fm-humanlayer-lib.sh owns its conservative
 # idle-screen classifier. Rendered text cannot prove HumanLayer busy;
-# only the tmux/herdr process-activity fallback can supply that verdict. The delivery
+# only the tmux process-activity fallback can supply that verdict. The delivery
 # guards in bin/fm-composer-lib.sh match rendered footers for submit
 # acknowledgement and away-mode supervisor injection only; neither is a
 # recorded worker state source.
@@ -891,7 +891,7 @@ fm_busy_humanlayer_tail_idle() {
 # fm_busy_classify: semantic classification for a task whose endpoint the
 # caller has already established as present. Prints "<verdict> <source>":
 # busy|idle|unknown plus the producing source (see header). Never classifies
-# process liveness, but HumanLayer may probe tool activity on tmux and herdr.
+# process liveness, but HumanLayer may probe tool activity on tmux.
 # <tail40> is optional pre-captured plain output used only by
 # the grok, rovo, agy, and humanlayer arms; when absent each captures through
 # fm_backend_capture if available, else reports unknown capture-failed.
