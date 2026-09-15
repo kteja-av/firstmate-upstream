@@ -1050,16 +1050,12 @@ fm_busy_classify() {  # <backend> <target> <harness> <id> <state-dir> [tail40]
       return 0
       ;;
     humanlayer)
-      if [ -z "$tail40" ]; then
-        if command -v fm_backend_capture >/dev/null 2>&1; then
-          tail40=$(fm_backend_capture "$backend" "$target" 40 2>/dev/null) || {
-            printf 'unknown capture-failed'
-            return 0
-          }
-        else
+      # Re-read styling: plain history cannot distinguish a pasted draft.
+      if command -v fm_backend_capture >/dev/null 2>&1; then
+        tail40=$(fm_humanlayer_capture "$backend" "$target") || {
           printf 'unknown capture-failed'
           return 0
-        fi
+        }
       fi
       out=$(printf '%s' "$tail40" | fm_humanlayer_screen_state)
       if [ "$out" != idle ] && [ "$backend" = tmux ] \

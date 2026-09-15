@@ -209,8 +209,15 @@ EOF
     verdict=$(printf '>\n> Investigate this log:\n%s\n\n  \n' "$content" | fm_humanlayer_screen_state)
     [ "$verdict" = unknown ] || fail "a content tail must not classify idle: $content"
     verdict=$(printf '> Investigate this log:\n%s\n>\n\n' "$content" | fm_humanlayer_screen_state)
-    [ "$verdict" = idle ] || fail "a final empty composer must classify idle after history: $content"
+    [ "$verdict" = unknown ] || fail "a literal > continuation must remain unsafe: $content"
   done
+  local color
+  for color in '34;197;94' '239;68;68' '234;179;8'; do
+    verdict=$(printf '> prior prompt\n\033[38;2;%sm[Done]\033[39m complete\n>\n' "$color" | fm_humanlayer_screen_state)
+    [ "$verdict" = idle ] || fail "styled completion must retire submitted history: $color"
+  done
+  verdict=$(printf '>\n[Done] complete\n>\n' | fm_humanlayer_screen_state)
+  [ "$verdict" = unknown ] || fail "a draft with an empty first line must remain unsafe"
   pass "busy-lib: the humanlayer anchor classifies idle, busy, and unknown from the pinned composer row"
 }
 
@@ -620,7 +627,7 @@ int main(int argc, char **argv) {
   if (argc > 1) {
     child = fork();
     if (child < 0) return 1;
-    if (child == 0) { execl("/bin/sleep", "sleep", "90", (char *)0); _exit(1); }
+    if (child == 0) { if (setpgid(0, 0) != 0) _exit(2); execl("/bin/sleep", "sleep", "90", (char *)0); _exit(1); }
   }
   printf("%ld\n", (long)child);
   fflush(stdout);
@@ -662,6 +669,7 @@ try:
     while not active(busy.pid):
         assert time.monotonic() < deadline, 'the active tool must produce a busy verdict'
         time.sleep(.02)
+    assert os.getpgid(child) != os.getpgid(busy.pid), 'tool must run in a separate process group'
     os.kill(child, signal.SIGTERM)
     children.remove(child)
     busy.wait(timeout=3)

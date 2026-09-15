@@ -736,7 +736,7 @@ fm_backend_send_text_submit() {  # <backend> <target> <text> <retries> <enter-sl
   if [ "${7:-}" = humanlayer ]; then
     local screen
     . "$FM_BACKEND_LIB_DIR/fm-humanlayer-lib.sh"
-    if ! screen=$(fm_backend_capture "$backend" "$1" 200 "${6:-}") ||
+    if ! screen=$(fm_humanlayer_capture "$backend" "$1" "${6:-}") ||
       [ "$(printf '%s' "$screen" | fm_humanlayer_screen_state)" != idle ]; then
       printf 'unknown'
       return 1

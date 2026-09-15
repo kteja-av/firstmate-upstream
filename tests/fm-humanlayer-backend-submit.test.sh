@@ -17,6 +17,14 @@ submit_fixture() {
   : > "$TEST_TMP/submitted"
   printf empty
 }
+tmux() {
+  [ "$1" = capture-pane ] || return 1
+  while [ "$#" -gt 0 ] && [ "$1" != -t ]; do shift; done
+  [ "$#" -ge 2 ] || return 1
+  capture_fixture "$2" 200 worker-label
+}
+fm_backend_herdr_capture_ansi() { capture_fixture "$@"; }
+fm_backend_zellij_composer_capture() { capture_fixture "$1" 200 "$2"; }
 fm_backend_tmux_capture() { capture_fixture "$@"; }
 fm_backend_herdr_capture() { capture_fixture "$@"; }
 fm_backend_cmux_capture() { capture_fixture "$@"; }
@@ -32,7 +40,7 @@ fm_backend_composer_state() { printf unknown; }
 fm_task_inbox_doorbell_line() { printf doorbell; }
 
 for backend in tmux herdr cmux orca zellij; do
-  for fixture_screen in '> draft' $'> Investigate this log:\n[Done] complete\n\n' $'>\n[Assistant] draft' ''; do
+  for fixture_screen in $'>\n[Done] complete\n>' $'> Investigate this log:\n[Done] complete\n>' '> draft' $'> Investigate this log:\n[Done] complete\n\n' $'>\n[Assistant] draft' ''; do
     capture_ok=yes
     submissions=0
     rm -f "$TEST_TMP/submitted"
@@ -45,7 +53,8 @@ for backend in tmux herdr cmux orca zellij; do
     fi
     [ ! -e "$TEST_TMP/submitted" ] || fail "$backend inbox must not call submit on unsafe input"
   done
-  fixture_screen=$'> previous prompt\n[Done] complete\n>\n'
+  fixture_screen=$'> previous prompt\n\033[38;2;34;197;94m[Done]\033[39m complete\n>\n'
+  case "$backend" in cmux|orca) fixture_screen='>' ;; esac
   capture_ok=no
   if fm_backend_send_text_submit "$backend" endpoint instruction 1 0 0 worker-label humanlayer >/dev/null; then
     fail "$backend must defer failed capture"

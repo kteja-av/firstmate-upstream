@@ -23,6 +23,9 @@ cleanup() {
 
 fail() {
   printf 'not ok - %s\n' "$1" >&2
+  if [ -n "$LAB" ]; then
+    "$REAL_TMUX" -L "$SOCKET" capture-pane -e -p -J -t "$TARGET" -S - >&2 2>/dev/null || true
+  fi
   cleanup
   exit 1
 }
@@ -49,6 +52,10 @@ WORKSPACE=$(cd "$LAB/workspace" && pwd -P) || fail "could not resolve the isolat
 . "$ROOT/bin/fm-composer-lib.sh"
 # shellcheck source=/dev/null
 . "$ROOT/bin/fm-control-lib.sh"
+. "$ROOT/bin/fm-backend.sh"
+. "$ROOT/bin/fm-task-inbox-lib.sh"
+# Keep backend calls on this guard's isolated server as well.
+tmux() { "$REAL_TMUX" -L "$SOCKET" "$@"; }
 
 "$REAL_TMUX" -L "$SOCKET" new-session -d -s "$SESSION" -n humanlayer -c "$WORKSPACE" \
   || fail "could not start the isolated tmux server"
@@ -58,7 +65,7 @@ capture() {
 }
 
 last_nonblank() {
-  printf '%s' "$1" | grep -v '^[[:space:]]*$' | tail -1
+  printf '%s' "$1" | grep -v '^[[:space:]]*$' | tail -1 | sed 's/[[:space:]]*$//'
 }
 
 # Launch the interactive codelayer TUI on the verified provider. The TUI draws
@@ -81,6 +88,41 @@ for _ in $(seq 1 120); do
 done
 [ -n "$ready" ] || fail "the real humanlayer TUI never rendered its banner plus bare-> composer"
 pass "the real humanlayer TUI reaches its verified ready signal"
+
+# Bracketed paste reproduces an unsubmitted multiline composer, including
+# transcript-shaped content and a literal final prompt glyph.
+for draft in $'Investigate this log:\n[Done] complete\n>' $'\n[Done] complete\n>'; do
+  printf '%s' "$draft" > "$LAB/draft"
+  "$REAL_TMUX" -L "$SOCKET" load-buffer "$LAB/draft" || fail "could not load draft"
+  "$REAL_TMUX" -L "$SOCKET" paste-buffer -p -t "$TARGET" || fail "could not paste draft"
+  sleep 0.5
+  before=$(capture)
+  state=$(fm_humanlayer_capture tmux "$TARGET" | fm_humanlayer_screen_state)
+  [ "$state" = unknown ] || fail "literal > draft must remain unsafe"
+  if fm_backend_send_text_submit tmux "$TARGET" SHOULD-NOT-SUBMIT 1 0.2 0.1 '' humanlayer >/dev/null; then
+    fail "direct steering accepted an unsubmitted draft"
+  fi
+  if fm_task_inbox_ring tmux "$TARGET" "$LAB/instruction.msg" '' humanlayer; then
+    fail "inbox steering accepted an unsubmitted draft"
+  fi
+  [ "$(capture)" = "$before" ] || fail "steering mutated the unsubmitted draft"
+  # Restart this disposable pane: HumanLayer leaves stale multiline rows
+  # behind when its input is cleared, which must remain ambiguous too.
+  "$REAL_TMUX" -L "$SOCKET" respawn-pane -k -t "$TARGET" -c "$WORKSPACE" \
+    "$HL_BIN codelayer --provider codex" || fail "could not reset the draft lab"
+  ready=
+  for _ in $(seq 1 120); do
+    screen=$(capture)
+    if printf '%s' "$screen" | grep -Fq 'codelayer - provider:' \
+      && [ "$(fm_humanlayer_capture tmux "$TARGET" | fm_humanlayer_screen_state)" = idle ]; then
+      ready=1
+      break
+    fi
+    sleep 0.5
+  done
+  [ -n "$ready" ] || fail "reset worker did not restore an empty composer"
+done
+pass "direct and inbox steering preserve real multiline drafts ending with >"
 
 prompt="Add 12345 and 67890. Reply with exactly the sum and nothing else"
 "$REAL_TMUX" -L "$SOCKET" send-keys -t "$TARGET" -l "$prompt" \
@@ -110,6 +152,8 @@ case "$screen" in
 esac
 printf '%s' "$screen" | fm_busy_humanlayer_tail_idle \
   || fail "the settled humanlayer tail must read idle through fm_busy_humanlayer_tail_idle"
+[ "$(fm_humanlayer_capture tmux "$TARGET" | fm_humanlayer_screen_state)" = idle ] \
+  || fail "styled completion did not restore safe submission after a real turn"
 pass "the settled humanlayer tail reads idle through the anchor fold"
 
 # Interrupt a genuinely long turn: poll until busy is observed, then send
@@ -141,7 +185,26 @@ for _ in $(seq 1 40); do
   fi
   sleep 0.5
 done
-[ -n "$process_busy" ] || fail "HumanLayer did not expose the running tool as foreground worker activity"
+if [ -z "$process_busy" ]; then
+  printf 'Foreground pids: %s\n' "$foreground" >&2
+  ps -t "${pane_tty#/dev/}" -o pid=,ppid=,pgid=,tpgid=,stat=,comm= >&2
+  ps -axo pid=,ppid=,pgid=,stat=,comm= | FM_HL_DIAGNOSTIC_ROOTS="$foreground" awk '
+    BEGIN { split(ENVIRON["FM_HL_DIAGNOSTIC_ROOTS"], ids, /[[:space:]]+/); for (i in ids) root[ids[i]] = 1 }
+    { parent[$1] = $2; row[$1] = $0 }
+    END {
+      for (pid in parent) {
+        ancestor = pid
+        for (depth = 0; depth < 128 && ancestor > 1; depth++) {
+          if (root[ancestor]) { print row[pid]; break }
+          ancestor = parent[ancestor]
+        }
+      }
+    }
+  ' >&2
+  fail "HumanLayer did not expose the running tool as foreground worker activity"
+fi
+[ "$(fm_busy_classify tmux "$TARGET" humanlayer hl-live "$LAB")" = 'busy humanlayer-process' ] \
+  || fail "the shared lifecycle classifier did not recognize the running tool"
 pass "HumanLayer running-tool activity is attributable to its foreground process"
 "$REAL_TMUX" -L "$SOCKET" send-keys -t "$TARGET" C-c \
   || fail "could not send Ctrl+C to the real humanlayer turn"
@@ -163,6 +226,8 @@ for _ in $(seq 1 60); do
   sleep 0.5
 done
 [ -n "$idle" ] || fail "the humanlayer composer never settled idle after the interrupt"
+[ "$(fm_busy_classify tmux "$TARGET" humanlayer hl-live "$LAB")" = 'idle humanlayer-anchor' ] \
+  || fail "the shared lifecycle classifier did not recognize idle after cancellation"
 "$REAL_TMUX" -L "$SOCKET" send-keys -t "$TARGET" C-c \
   || fail "could not send the Ctrl+C exit key"
 gone=

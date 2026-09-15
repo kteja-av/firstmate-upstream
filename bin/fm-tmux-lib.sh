@@ -202,7 +202,7 @@ fm_pane_busy_state() {  # <target> [harness] -> busy|idle|unknown
   tail40=$(tmux capture-pane -p -t "$win" -S -40 2>/dev/null) \
     || { printf 'unknown'; return 0; }
   if [ "$harness" = humanlayer ]; then
-    printf '%s' "$tail40" | fm_humanlayer_screen_state
+    fm_humanlayer_capture tmux "$win" | fm_humanlayer_screen_state
     return
   fi
   visible=$(printf '%s' "$tail40" | grep -v '^[[:space:]]*$' | tail -12)
@@ -313,7 +313,7 @@ fm_tmux_submit_core() {  # <target> <text> <retries> <enter-sleep> <settle> [exp
       printf 'unknown'
       return 0
     }
-    baseline_state=$(printf '%s' "$baseline_screen" | fm_humanlayer_screen_state)
+    baseline_state=$(fm_humanlayer_capture tmux "$target" | fm_humanlayer_screen_state)
   else
     baseline_state=$(fm_pane_busy_state "$target" "$harness")
   fi
