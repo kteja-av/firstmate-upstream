@@ -11,9 +11,9 @@ Verified as a CREWMATE and SCOUT adapter only; `../../../../../bin/fm-spawn.sh` 
 | Binary | Absolute `humanlayer` from `PATH`, refused if absent; the installed launcher is a node shim (`~/.local/bin/humanlayer`) whose native child (`.../@humanlayer/cli-darwin-arm64/bin/humanlayer`) has `comm` exactly `humanlayer`. |
 | Launch | `humanlayer codelayer --provider codex`, bare: there is no interactive launch flag that carries a prompt (`--prompt` runs non-interactively and exits at turn end), so the brief pointer is submitted through the composer after the readiness gate - the kimi/rovo launch-then-confirm shape. |
 | Provider | `--provider codex` is the verified provider; codelayer's provider auto-runs tool calls with no approval prompt (verified live: bash commands and file writes landed ungated), which an unattended crewmate needs. |
-| Busy state | No hook or plugin writer, so nothing is armed or seeded; `bin/fm-busy-lib.sh` folds the screen verdict as `humanlayer-anchor`, and tmux alone can prove tool-call activity from live tool descendants of an identified foreground HumanLayer process (`humanlayer-process`). herdr has NO busy proof: `pane process-info` never surfaces a tool call's children and the agent registry does not register codelayer (verified against herdr 0.8.0 / humanlayer 0.31.0; zero non-agent children over 60 samples of active work), so busy there stays unknown and supervision reads the worker's status log and turn-end events instead. Pure model thinking has no child process on any backend and stays unknown. |
+| Busy state | See [busy-state arming and turn-end wiring](#busy-state-arming-and-turn-end-wiring-deliberate-gaps) for the classifier sources and supervision limits. |
 | Idle anchor | `bin/fm-humanlayer-lib.sh` owns classification: the final non-blank row must be bare `>`, with no unresolved draft history; fresh-launch banners must be anchored at the top of the capture immediately before the composer, while retiring earlier prompt history requires a styled vendor completion row, whose provenance survives the usage footer. Draft continuation rows and truncated captures without positive provenance remain unknown; a plain completion marker cannot clear draft history. |
-| Turn end | No turn-end hook or notification touch exists; completion arrives through the worker status protocol, and the bare `>` anchor returning is the pane-side evidence. |
+| Turn end | See [busy-state arming and turn-end wiring](#busy-state-arming-and-turn-end-wiring-deliberate-gaps). |
 | Exit | Use the lifecycle control plane; [agent control](../../../../../docs/agent-control.md#verbs) owns its guarded key-exit contract. |
 | Interrupt | Use the lifecycle control plane; [agent control](../../../../../docs/agent-control.md#verbs) owns the busy precondition and cancellation boundary. |
 | Skill | No verified slash-skill form: typed `/...` renders literal composer text and reaches the model as chat. Use natural language. |
@@ -53,9 +53,14 @@ humanlayer is deliberately absent from the session-lock name vocabulary in `../.
 
 ## Busy-state arming and turn-end wiring: deliberate gaps
 
-`bin/fm-spawn.sh` deliberately does NOT arm the busy-state contract for humanlayer: arming without a writer would seed a busy record nothing can ever clear (the grok/rovo/agy rule), and humanlayer has no hook surface that could write one. The live proof that this is sufficient: a spawned humanlayer worker read `working - harness busy (humanlayer-process)` from the anchor with no `busy-state` or `busy-gen` file present, and a settled worker classifies through the same anchor without any record. If crew-state ever prints `unknown missing` for a humanlayer task, the caller is running pre-merge scripts without the `humanlayer` classify arm, not reporting a gap in this adapter.
+`bin/fm-spawn.sh` does not arm or seed a HumanLayer busy-state record because no hook or plugin writer could clear it.
+[`bin/fm-busy-lib.sh`](../../../../../bin/fm-busy-lib.sh) reports the screen classifier as `humanlayer-anchor`; tmux alone can prove tool-call activity from live tool descendants of an identified foreground HumanLayer process (`humanlayer-process`).
+Herdr has no busy proof, and pure model thinking without a tool child stays unknown on tmux too.
+[Runtime backend verification](../../../../../docs/verification/runtime-backends.md#humanlayer-humanlayer) owns the process observations and live evidence; `tests/fm-humanlayer-harness.test.sh` pins the portable classifier behavior.
 
-There is also no turn-end wiring: no hook or poller touches `state/<id>.turn-ended`, so a humanlayer turn's end wakes supervision through the worker's own status protocol only (the same shape as the agy and rovo adapters). Supervision for humanlayer tasks is status-log-driven, with the pane anchor supplying current-state truth and the watcher's stale detection covering a wedged worker. The honest alternative - a pane-folding poller writing turn-end touches - would be a new supervision mechanism and is deliberately not invented here.
+No hook or poller touches `state/<id>.turn-ended` for this adapter.
+Supervision therefore relies on the worker's status protocol for wake notifications, the classifier for available current-state evidence, and the watcher's stale detection for a wedged worker.
+An unknown verdict is not proof that a turn has ended or that steering is safe.
 
 ## Primary integration
 

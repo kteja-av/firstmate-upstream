@@ -1057,7 +1057,7 @@ fm_busy_classify() {  # <backend> <target> <harness> <id> <state-dir> [tail40]
         # 0.8.0 and humanlayer 0.31.0; the descendant walk measured zero
         # non-agent children over 60 samples of an actively-running
         # multi-tool task), so busy on herdr stays unknown and supervision
-        # reads the worker's status log and turn-end events instead. Pure
+        # reads the worker's status log instead (there is no turn-end hook). Pure
         # model thinking has no tool child on tmux either and stays unknown
         # there, the same partial coverage the grok/rovo/agy arms accept.
         case "$backend" in
