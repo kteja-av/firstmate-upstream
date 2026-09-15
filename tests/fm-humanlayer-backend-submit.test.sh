@@ -9,7 +9,12 @@ fm_backend_source() { :; }
 capture_fixture() {
   [ "$1" = endpoint ] && [ "$3" = worker-label ] || return 1
   [ "$capture_ok" = yes ] || return 1
-  printf '%s' "$fixture_screen"
+  if [ -f "$TEST_TMP/response" ]; then
+    cat "$TEST_TMP/response"
+    rm -f "$TEST_TMP/response"
+  else
+    printf '%s' "$fixture_screen"
+  fi
 }
 submit_fixture() {
   [ "$1" = endpoint ] && [ "$6" = worker-label ] && [ "$7" = humanlayer ] || return 1
@@ -17,6 +22,31 @@ submit_fixture() {
   : > "$TEST_TMP/submitted"
   printf empty
 }
+literal_fixture() {
+  [ "$1" = endpoint ] && [ "$3" = worker-label ] || return 1
+  submissions=$((submissions + 1))
+  : > "$TEST_TMP/submitted"
+  printf '%s' "$2" > "$TEST_TMP/text"
+}
+key_fixture() {
+  [ "$1" = endpoint ] && [ "$2" = Enter ] && [ "$3" = worker-label ] || return 1
+  printf 'Enter\n' >> "$TEST_TMP/keys"
+  local plain
+  plain=$(printf '%s' "$fixture_screen" | fm_composer_strip_ansi | tr -d '\r')
+  {
+    printf '%s> %s\n' "${plain%>*}" "$(cat "$TEST_TMP/text")"
+    case "${delivery:-working}" in
+      working) printf '[Tool] bash command=work\n' ;;
+      complete) printf '[Assistant] done\n[Done] complete\n>\n' ;;
+    esac
+  } > "$TEST_TMP/response"
+}
+fm_backend_herdr_send_literal() { literal_fixture "$@"; }
+fm_backend_cmux_send_literal() { literal_fixture "$@"; }
+fm_backend_orca_send_literal() { literal_fixture "$@"; }
+fm_backend_herdr_send_key() { key_fixture "$@"; }
+fm_backend_cmux_send_key() { key_fixture "$@"; }
+fm_backend_orca_send_key() { key_fixture "$@"; }
 tmux() {
   [ "$1" = capture-pane ] || return 1
   while [ "$#" -gt 0 ] && [ "$1" != -t ]; do shift; done
@@ -121,4 +151,20 @@ for completion in $'\033[38;2;34;197;94m[Done]\033[39m complete' $'\033[0m\033[3
     done
     pass "$backend preserves completion through usage furniture and rejects new drafts"
   done
+done
+
+
+for backend in herdr cmux orca; do
+  for delivery in working complete swallowed; do
+    fixture_screen=$'> instruction\n[Assistant] old result\n\033[38;2;34;197;94m[Done]\033[39m complete\n>\n'
+    : > "$TEST_TMP/keys"
+    verdict=$(fm_backend_send_text_submit "$backend" endpoint instruction 1 0 0 worker-label humanlayer)
+    if [ "$delivery" = swallowed ]; then
+      [ "$verdict" = unknown ] || fail "$backend must not borrow historical confirmation"
+    else
+      [ "$verdict" = empty ] || fail "$backend must confirm current $delivery output"
+    fi
+    [ "$(wc -l < "$TEST_TMP/keys" | tr -d ' ')" = 1 ] || fail "$backend must send Enter once"
+  done
+  pass "$backend confirms current HumanLayer responses without generic composer state"
 done

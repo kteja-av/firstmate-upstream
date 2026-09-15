@@ -742,6 +742,11 @@ fm_backend_send_text_submit() {  # <backend> <target> <text> <retries> <enter-sl
       return 1
     fi
   fi
+  if [ "${7:-}" = humanlayer ]; then
+    case "$backend" in
+      herdr|cmux|orca) fm_humanlayer_backend_submit "$backend" "$screen" "$@"; return $? ;;
+    esac
+  fi
   case "$backend" in
     tmux) fm_backend_tmux_send_text_submit "$@" ;;
     herdr) fm_backend_herdr_send_text_submit "$@" ;;
