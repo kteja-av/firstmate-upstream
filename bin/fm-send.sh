@@ -75,7 +75,8 @@
 # delivered. Submission dispatches through the target's recorded backend; the
 # tmux adapter shares its composer/submit core with the away-mode daemon via
 # bin/fm-tmux-lib.sh. Tune with FM_SEND_RETRIES (default 3; agy typed targets
-# default to 20 for agy's late busy render) / FM_SEND_SLEEP (0.4). Slash
+# default to 20 for agy's late busy render; humanlayer defaults to 150
+# while awaiting provider output) / FM_SEND_SLEEP (0.4). Slash
 # commands, and codex `$...` skill invocations resolved through harness meta,
 # get a longer pre-Enter settle so completion popups do not swallow Enter.
 # A remote secondmate target has no typed text plane at all:
@@ -1074,11 +1075,13 @@ else
   # default's 3 x 0.4s. With the shared default a typed steer to an agy
   # endpoint was reported exit-1 non-delivery for a message that landed and
   # ran, inviting a duplicate resend. agy typed targets get a longer default
-  # budget (~8s at the default cadence, twice the worst measured render); an
-  # explicit FM_SEND_RETRIES still wins, and every other harness keeps the
-  # shared 3-retry default untouched.
+  # budget (~8s at the default cadence, twice the worst measured render).
+  # HumanLayer needs provider output to confirm submission, so allow 60s
+  # at the default cadence. Explicit FM_SEND_RETRIES still wins; other
+  # harnesses keep the shared 3-retry default.
   case "$TARGET_HARNESS" in
     agy) retries=${FM_SEND_RETRIES:-20} ;;
+    humanlayer) retries=${FM_SEND_RETRIES:-150} ;;
     *) retries=${FM_SEND_RETRIES:-3} ;;
   esac
   sleep_s=${FM_SEND_SLEEP:-0.4}
