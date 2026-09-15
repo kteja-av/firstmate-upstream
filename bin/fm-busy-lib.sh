@@ -44,7 +44,7 @@
 #   fm-recovery      a documented recovery reset after relaunch
 # Classifier-only sources (never written into a record):
 #   endpoint-gone, herdr-native, grok-regex, rovo-regex, agy-regex,
-#   humanlayer-anchor, muse-session-log,
+#   humanlayer-anchor, humanlayer-process, muse-session-log,
 #   cursor-transcript, missing, malformed, gen-mismatch, source-mismatch,
 #   kimi-unverified, codex-unverified, capture-failed, no-target
 #
@@ -58,8 +58,8 @@
 #      muse session-log and cursor transcript pull sources, then the
 #      Grok/Rovo/AGY temporary regex fallbacks classify a grok, rovo, or agy
 #      task from its rendered tail; the humanlayer anchor classifies a
-#      humanlayer task from its pinned composer row (see
-#      fm_busy_humanlayer_tail_idle), then unknown missing
+#      humanlayer task via fm_humanlayer_screen_state, with tmux tool
+#      activity as a busy fallback, then unknown missing
 #   5. malformed, stale, or untrusted records -> unknown, never a fallback
 # Grok, Rovo, and AGY are the ONLY positive rendered-marker classifications
 # that survive the redesign, because none of their structured lifecycles was
@@ -878,20 +878,8 @@ fm_busy_agy_tail_busy() {
     | grep -qiE 'esc[[:space:]]+to[[:space:]]+cancel'
 }
 
-# fm_busy_humanlayer_tail_idle: the humanlayer-only rendered-anchor test.
-# Consumes a tail on stdin; 0 when the LAST non-blank line is exactly the
-# bare `>` composer row (verified live on humanlayer 0.31.0: at idle the
-# TUI pins a bare `>` composer row as the bottom-most non-blank row, while
-# a running turn replaces it with streaming `[Tool]`/`[Assistant]` rows or
-# the submitted prompt's echo row, and re-renders the bare `>` the moment
-# the turn settles). The anchor is a NEGATIVE idle test, deliberately the
-# opposite shape of the grok/rovo/agy positive markers: humanlayer renders
-# no pinned busy footer, and every transcript token (`[Done] complete`,
-# `[Assistant]`, `> <echo>`) persists in the visible history at idle, so
-# only the composer row itself separates the two states. Trailing
-# whitespace is tolerated; a changed composer glyph breaks this toward
-# busy, which fails loud in stale detection instead of silently reporting
-# a finished turn.
+# Fresh-launch readiness anchor only; this plain tail test cannot distinguish
+# draft history. Ongoing state classification uses fm_humanlayer_screen_state.
 fm_busy_humanlayer_tail_idle() {
   local last
   last=$(grep -v '^[[:space:]]*$' | tail -1) || return 1
@@ -902,8 +890,9 @@ fm_busy_humanlayer_tail_idle() {
 
 # fm_busy_classify: semantic classification for a task whose endpoint the
 # caller has already established as present. Prints "<verdict> <source>":
-# busy|idle|unknown plus the producing source (see header). Never probes
-# process state. <tail40> is optional pre-captured plain output used only by
+# busy|idle|unknown plus the producing source (see header). Never classifies
+# process liveness, but HumanLayer may probe tool activity on tmux.
+# <tail40> is optional pre-captured plain output used only by
 # the grok, rovo, agy, and humanlayer arms; when absent each captures through
 # fm_backend_capture if available, else reports unknown capture-failed.
 fm_busy_classify() {  # <backend> <target> <harness> <id> <state-dir> [tail40]

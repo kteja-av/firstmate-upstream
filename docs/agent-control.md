@@ -45,6 +45,12 @@ The clear is refused before anything is sent when the recorded backend cannot de
 
 `exit` reads the composer's state before typing the exit command and requires the exact `empty` verdict; a `pending` verdict refuses by naming the pending text, and any other verdict (`unknown`, `pending-unproven`, or an unreadable read) refuses as not proven empty, matching the fail-safe contract every other consumer that can overwrite composer input follows.
 
+HumanLayer uses Ctrl+C both to interrupt running work and to exit at idle; typed `/quit` and `/exit` are ordinary model input.
+HumanLayer interruption on tmux accepts live tool descendants of the identified foreground worker as process activity evidence; plain terminal text alone cannot authorize Ctrl+C.
+Exit and relaunch cancel a worker with that evidence, then wait for the idle composer before sending the exit key; genuinely unidentified activity is refused.
+The interrupt boundary refuses idle or unknown state because Ctrl+C could exit the worker.
+If activity becomes provably busy while exit or relaunch is waiting, the same guarded interrupt path cancels it before waiting for idle again.
+
 **Teardown and discard are not verbs and will not become verbs.**
 `exit` stops an agent and preserves everything else.
 Removing a worktree, closing an endpoint, or discarding work stays with [`bin/fm-teardown.sh`](../bin/fm-teardown.sh), which owns the landed-work test.
@@ -95,7 +101,7 @@ Switching harness is therefore one ordinary relaunch rather than a separate mech
 - An implicit relaunch from a prefixed raw-command basename is refused before the agent or durable state is touched because its original launch command cannot be reconstructed.
 - An adapter that is not verified for this task's kind is refused **before** the running agent is stopped, not after.
   Muse is a crewmate and scout adapter only, so relaunching a secondmate onto it refuses while its agent is still up rather than leaving that secondmate with no agent when the launch owner refuses.
-  HumanLayer is a crewmate and scout adapter only for the same reason, and its verified exit is the `Ctrl+C` key rather than a composer command, so `exit` delivers a key instead of typed text.
+  HumanLayer has the same task-kind restriction; its lifecycle contract is described under [Verbs](#verbs).
 - A backend that cannot deliver the harness's interrupt key, or the composer clear that key needs, is refused rather than sent a different key.
   Orca's terminal API exposes only an interrupt and an Enter, so it can deliver neither Escape nor Ctrl+U.
 - `exit` and `relaunch` require a backend with a recovery-grade agent-state classifier - tmux and herdr - because without one the "the agent stopped" postcondition cannot be proven.
@@ -126,6 +132,3 @@ The empirical basis for each adapter's value is the `harness-adapters` skill's v
 - `tests/fm-control.test.sh` - the adapter contract for its verified-harness lane (adapters outside the lane pin their control mechanics in their own harness suites), the backend capability matrix, exact-id scoping, the closed verb list, the busy, idle, dead, and idempotent lifecycle cases, and marker non-regression, all against a stubbed session provider.
 - `tests/fm-control-relaunch.test.sh` - the relaunch transaction: identity preservation, harness switching, the progress note, checkpoint refusals, and rollback after a failed launch.
 - `tests/fm-control-herdr-smoke.test.sh` - the second state-verified backend against the real herdr binary, on an isolated throwaway lab session.
-
-HumanLayer interruption on tmux accepts live tool descendants of the identified foreground worker as process activity evidence; plain terminal text alone cannot authorize Ctrl+C.
-Exit and relaunch cancel a worker with that evidence, then wait for the idle composer before sending the exit key; genuinely unidentified activity is refused.

@@ -2010,7 +2010,7 @@ A throwaway scout was spawned through `bin/fm-spawn.sh --scout --harness omp --m
 
 ## HumanLayer (humanlayer)
 
-humanlayer runs crewmate and scout work; its adapter reference ([`.agents/skills/harness-adapters/references/harness/humanlayer.md`](../../.agents/skills/harness-adapters/references/harness/humanlayer.md)) owns the operating-facts table and the one-owner statements of the busy-anchor and control contracts.
+humanlayer runs crewmate and scout work; its adapter reference ([`.agents/skills/harness-adapters/references/harness/humanlayer.md`](../../.agents/skills/harness-adapters/references/harness/humanlayer.md)) owns the operating-facts table and steering preconditions; [agent control](../agent-control.md#verbs) owns lifecycle control.
 The evidence below was produced on 2026-09-15 against humanlayer 0.31.0 (`~/.local/bin/humanlayer`, config home `~/.humanlayer`) on macOS arm64 through the tmux backend, with the Codex provider defaulting to `gpt-6-astra`.
 
 ### Process identity and markers
@@ -2039,7 +2039,7 @@ A fresh directory showed no trust dialog in interactive or non-interactive runs,
 A trivial ship task was spawned through `bin/fm-spawn.sh --harness humanlayer` on tmux from an isolated disposable worktree and driven through the full loop:
 
 1. the launch came up bare, the readiness gate saw the banner plus the bare `>` anchor, and the brief pointer was submitted through the composer;
-2. the delivery gate confirmed the busy anchor, the worker processed the brief with no approval prompt, and the bare `>` anchor returned at the natural turn end;
+2. the delivery gate confirmed submission, the worker processed the brief with no approval prompt, and the bare `>` anchor returned at the natural turn end;
 3. `bin/fm-send.sh` delivered a steer through the durable inbox once the anchor read idle;
 4. `bin/fm-control.sh <id> interrupt` cancelled a running turn with the worker still alive;
 5. `bin/fm-control.sh <id> exit` stopped the agent through the verified `Ctrl+C` exit key.

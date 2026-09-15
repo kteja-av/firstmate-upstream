@@ -484,13 +484,9 @@ do_exit() {
       esac
       ;;
   esac
-  # The exit mechanism is per-harness: a composer command for every adapter
-  # except humanlayer, whose verified exit is a single Ctrl+C key at its idle
-  # composer (typed /quit and /exit reach the model as chat, verified live on
-  # humanlayer 0.31.0). The key path skips the composer-state guard because a
-  # key cannot concatenate onto pending text, and skips the submit verdict for
-  # the same reason do_exit's command path discounts it: the authoritative
-  # proof is the agent-state wait below.
+  # HumanLayer's state-dependent exit key must wait for verified idle after
+  # cancellation; otherwise another Ctrl+C could interrupt again instead of
+  # exiting. Process death remains the authoritative exit postcondition.
   if key=$(fm_control_exit_key "$HARNESS"); then
     fm_control_backend_supports_key "$BACKEND" "$key" \
       || die "harness $HARNESS exits via the $key key, which the $BACKEND backend cannot deliver; refusing to send a different key"
