@@ -10,7 +10,7 @@
 #                            active, exit 4 while return catch-up is pending.
 #   fm-afk-return.sh catchup-summary  Read-only catch-up projection for a reporting surface.
 #
-# THE RETURN BRIEF (stdout, on begin and on every check) is rendered from durable
+# THE RETURN BRIEF (stdout, after successful staging on begin/check) is rendered from durable
 # records, never from conversation memory: the archived away-posture record
 # (bin/fm-afk-contract.sh), the supervision outcome store
 # (bin/fm-branch-outcome.sh), the held set in the backlog (tasks-axi), and the
@@ -39,7 +39,12 @@
 # so a crash between stopping, wake presentation, and blocker handling fails
 # closed. It retains the presented wake, buffered-escalation, wedge-marker,
 # health, and posture-record evidence until every live open blocker is closed
-# and `check` succeeds. Repeated begin/check calls are idempotent. `guard` and
+# and `check` succeeds.
+# Brief/evidence staging or publication failure retains catch-up and delivery
+# artifacts for retry; staging failure publishes no partial brief or evidence.
+# These failures return 3; failure to create staging files or persist the gate
+# returns 1. Retry with `check` after restoring writable storage/output.
+# Repeated begin/check calls are idempotent. `guard` and
 # `catchup-summary` never mutate state and are suitable for ordinary read
 # entrypoints such as fm-bearings-snapshot.sh. `guard` separates its two
 # refusal branches by exit status so a reporting surface can keep refusing
