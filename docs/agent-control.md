@@ -127,5 +127,5 @@ The empirical basis for each adapter's value is the `harness-adapters` skill's v
 - `tests/fm-control-relaunch.test.sh` - the relaunch transaction: identity preservation, harness switching, the progress note, checkpoint refusals, and rollback after a failed launch.
 - `tests/fm-control-herdr-smoke.test.sh` - the second state-verified backend against the real herdr binary, on an isolated throwaway lab session.
 
-HumanLayer interruption requires a busy verdict from an independent state source; plain terminal text cannot authorize Ctrl+C because pasted log lines are indistinguishable from running output.
-On tmux, wait for the idle composer before exit or relaunch; interruption is refused while state remains unknown.
+HumanLayer interruption on tmux accepts live tool descendants of the identified foreground worker as process activity evidence; plain terminal text alone cannot authorize Ctrl+C.
+Exit and relaunch cancel a worker with that evidence, then wait for the idle composer before sending the exit key; genuinely unidentified activity is refused.

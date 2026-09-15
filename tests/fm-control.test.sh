@@ -121,6 +121,7 @@ case "${1:-}" in
           printf 'zsh' > "$D/command"
         else
           : > "$D/hl-settling"
+          rm -f "$D/hl-active"
         fi
       fi
       if [ -n "${FM_FAKE_INTERRUPT_STOPS_AGENT:-}" ] \
@@ -139,6 +140,7 @@ case "${1:-}" in
   display-message)
     for a in "$@"; do
       case "$a" in
+        *pane_tty*) printf 'fm-humanlayer-test-tty\n'; exit 0 ;;
         *cursor_y*) printf '1\n'; exit 0 ;;
         *pane_current_command*) cat "$D/command"; printf '\n'; exit 0 ;;
         *pane_current_path*) cat "$D/cwd"; printf '\n'; exit 0 ;;
@@ -155,6 +157,20 @@ esac
 exit 0
 SH
   chmod +x "$fb/tmux"
+  cat > "$fb/ps" <<'SH'
+#!/usr/bin/env bash
+case "$*" in
+  '-t fm-humanlayer-test-tty -o pid=,pgid=,tpgid=,comm=')
+    if [ "$(cat "$FM_FAKE_DIR/command")" = humanlayer ]; then printf '700 700 700 humanlayer\n'; fi
+    ;;
+  '-axo pid=,ppid=,pgid=,stat=,comm=')
+    printf '700 1 700 S humanlayer\n'
+    if [ -e "$FM_FAKE_DIR/hl-active" ]; then printf '701 700 700 S sleep\n'; fi
+    ;;
+  *) exec /bin/ps "$@" ;;
+esac
+SH
+  chmod +x "$fb/ps"
   cat > "$fb/sleep" <<'SH'
 #!/usr/bin/env bash
 if [ -e "$FM_FAKE_DIR/hl-settling" ] && [ ! -e "$FM_FAKE_DIR/hl-stuck" ]; then
@@ -952,6 +968,7 @@ test_humanlayer_lifecycle() {
   local pending
   for pending in $'> Investigate this log:\n[Tool] bash command=sleep 30' \
     $'> Investigate this log:\n[Assistant] example' \
+    $'> Investigate this log:\n>' \
     $'> Investigate this log:\nwrapped input\n[Tool] bash command=sleep 30'; do
     printf '%s\n' "$pending" > "$dir/fake/pane"
     out=$(run_control "$dir" t1 interrupt); rc=$?
@@ -968,13 +985,27 @@ test_humanlayer_lifecycle() {
   expect_code 0 "$rc" "HumanLayer exit must wait for idle: $out"
   [ "$(keys_sent "$dir")" = C-c ] || fail "settled exit must send one key"
 
-  pass "HumanLayer refuses idle interruption and waits for idle before exiting"
+  alive_as "$dir" humanlayer
+  : > "$dir/fake/keys"
+  : > "$dir/fake/hl-active"
+  printf '> Run sleep 90\n[Tool] bash command=sleep 90\n' > "$dir/fake/pane"
+  out=$(run_control "$dir" t1 interrupt); rc=$?
+  expect_code 0 "$rc" "active HumanLayer tool must be cancellable: $out"
+  [ "$(keys_sent "$dir")" = C-c ] || fail "active tool interruption must send one key"
+  [ "$(cat "$dir/fake/command")" = humanlayer ] || fail "interrupt must preserve the worker"
+  : > "$dir/fake/keys"
+  : > "$dir/fake/hl-active"
+  printf '> Run sleep 90\n[Tool] bash command=sleep 90\n' > "$dir/fake/pane"
+  out=$(run_control "$dir" t1 exit); rc=$?
+  expect_code 0 "$rc" "active HumanLayer exit must cancel before exiting: $out"
+  [ "$(keys_sent "$dir")" = $'C-c\nC-c' ] || fail "active exit must send two keys"
+  pass "HumanLayer cancels active tools and refuses ambiguous composer input"
 }
 test_humanlayer_lifecycle
 
 test_humanlayer_direct_delivery() {
   local dir mode out rc
-  for mode in working complete swallow enter-failed busy pending; do
+  for mode in working complete swallow enter-failed busy pending continuation; do
     dir=$(new_case "hl-send-$mode")
     add_task "$dir" t1 humanlayer
     alive_as "$dir" humanlayer
@@ -983,6 +1014,7 @@ test_humanlayer_direct_delivery() {
       working) ;;
       busy) printf '[Tool] bash command=sleep 30\n' > "$dir/fake/pane" ;;
       pending) printf '> old pending text\n' > "$dir/fake/pane" ;;
+      continuation) printf '> Investigate this log:\n>\n' > "$dir/fake/pane" ;;
       *) : > "$dir/fake/hl-$mode" ;;
     esac
     out=$(env PATH="$dir/fakebin:$PATH" FM_HOME="$dir/home" FM_FAKE_DIR="$dir/fake" \
@@ -993,7 +1025,7 @@ test_humanlayer_direct_delivery() {
       *) [ "$rc" -ne 0 ] || fail "HumanLayer must refuse unproven $mode delivery" ;;
     esac
     case "$mode" in
-      busy|pending) [ ! -s "$dir/fake/literal" ] || fail "HumanLayer must not type into $mode input" ;;
+      busy|pending|continuation) [ ! -s "$dir/fake/literal" ] || fail "HumanLayer must not type into $mode input" ;;
     esac
   done
   pass "HumanLayer direct steering confirms output and rejects pending or lost submissions"

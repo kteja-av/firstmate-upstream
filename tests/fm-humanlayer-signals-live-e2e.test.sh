@@ -130,6 +130,19 @@ printf '%s' "$screen" | fm_humanlayer_submission_seen "$prompt" \
   || fail "the long humanlayer turn never produced submission evidence"
 [ "$(last_nonblank "$screen")" != '>' ] \
   || fail "the long humanlayer turn already settled before interruption"
+process_busy=
+for _ in $(seq 1 40); do
+  pane_tty=$("$REAL_TMUX" -L "$SOCKET" display-message -p -t "$TARGET" '#{pane_tty}')
+  foreground=$(ps -t "${pane_tty#/dev/}" -o pid=,pgid=,tpgid= \
+    | awk '$2 == $3 { print $1 }')
+  if ps -axo pid=,ppid=,pgid=,stat=,comm= | fm_humanlayer_processes_active "$foreground"; then
+    process_busy=1
+    break
+  fi
+  sleep 0.5
+done
+[ -n "$process_busy" ] || fail "HumanLayer did not expose the running tool as foreground worker activity"
+pass "HumanLayer running-tool activity is attributable to its foreground process"
 "$REAL_TMUX" -L "$SOCKET" send-keys -t "$TARGET" C-c \
   || fail "could not send Ctrl+C to the real humanlayer turn"
 cancelled=

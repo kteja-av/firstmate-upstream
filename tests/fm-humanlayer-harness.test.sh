@@ -598,3 +598,76 @@ test_humanlayer_scrolling_delivery() {
   pass "HumanLayer retains delivery evidence across scrolling and honors confirmed submissions"
 }
 test_humanlayer_scrolling_delivery
+
+test_humanlayer_real_process_activity() {
+  local lab="$TMP_ROOT/process-activity"
+  mkdir -p "$lab"
+  cat > "$lab/worker.c" <<'C'
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/wait.h>
+int main(int argc, char **argv) {
+  (void)argv;
+  pid_t child = 0;
+  if (argc > 1) {
+    child = fork();
+    if (child < 0) return 1;
+    if (child == 0) { execl("/bin/sleep", "sleep", "90", (char *)0); _exit(1); }
+  }
+  printf("%ld\n", (long)child);
+  fflush(stdout);
+  if (child) waitpid(child, NULL, 0);
+  else pause();
+  return 0;
+}
+C
+  cc -o "$lab/humanlayer" "$lab/worker.c" || fail "could not build the process-activity fixture"
+  python3 - "$ROOT" "$lab/humanlayer" <<'PYTEST'
+import os
+import signal
+import subprocess
+import sys
+import time
+root, executable = sys.argv[1:]
+workers = []
+children = []
+def active(pid):
+    result = subprocess.run([
+        'bash', '-c', '. "$1/bin/fm-humanlayer-lib.sh"; '
+        'ps -axo pid=,ppid=,pgid=,stat=,comm= | fm_humanlayer_processes_active "$2"',
+        '_', root, str(pid)
+    ])
+    return result.returncode == 0
+try:
+    idle = subprocess.Popen([executable], stdout=subprocess.PIPE, text=True)
+    workers.append(idle)
+    assert idle.stdout.readline().strip() == '0'
+    sibling = subprocess.Popen(['/bin/sleep', '90'])
+    workers.append(sibling)
+    assert not active(idle.pid), 'an idle worker must not borrow sibling activity'
+    assert not active(sibling.pid), 'an unrelated process cannot identify HumanLayer'
+    busy = subprocess.Popen([executable, 'tool'], stdout=subprocess.PIPE, text=True)
+    workers.append(busy)
+    child = int(busy.stdout.readline())
+    children.append(child)
+    deadline = time.monotonic() + 3
+    while not active(busy.pid):
+        assert time.monotonic() < deadline, 'the active tool must produce a busy verdict'
+        time.sleep(.02)
+    os.kill(child, signal.SIGTERM)
+    children.remove(child)
+    busy.wait(timeout=3)
+    assert not active(busy.pid), 'completed tool activity must not remain busy'
+finally:
+    for child in children:
+        try: os.kill(child, signal.SIGTERM)
+        except ProcessLookupError: pass
+    for worker in workers:
+        if worker.poll() is None: worker.terminate()
+        worker.wait(timeout=3)
+PYTEST
+  [ "$?" -eq 0 ] || fail "real-process HumanLayer activity checks failed"
+  pass "HumanLayer activity is scoped to live tool descendants of the identified worker"
+}
+test_humanlayer_real_process_activity

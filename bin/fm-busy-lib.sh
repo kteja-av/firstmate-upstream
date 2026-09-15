@@ -1061,7 +1061,15 @@ fm_busy_classify() {  # <backend> <target> <harness> <id> <state-dir> [tail40]
           return 0
         fi
       fi
-      printf '%s humanlayer-anchor' "$(printf '%s' "$tail40" | fm_humanlayer_screen_state)"
+      out=$(printf '%s' "$tail40" | fm_humanlayer_screen_state)
+      if [ "$out" != idle ] && [ "$backend" = tmux ] \
+        && command -v fm_backend_source >/dev/null 2>&1 \
+        && fm_backend_source tmux \
+        && fm_backend_tmux_humanlayer_busy "$target"; then
+        printf 'busy humanlayer-process'
+      else
+        printf '%s humanlayer-anchor' "$out"
+      fi
       return 0
       ;;
   esac
