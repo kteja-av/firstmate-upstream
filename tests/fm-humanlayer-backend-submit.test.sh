@@ -161,38 +161,36 @@ for completion in $'\033[38;2;34;197;94m[Done]\033[39m complete' $'\033[0m\033[3
 done
 
 
-for backend in herdr; do
-  for delivery in working complete swallowed; do
-    fixture_screen=$'> instruction\n[Assistant] old result\n\033[38;2;34;197;94m[Done]\033[39m complete\n>\n'
-    : > "$TEST_TMP/keys"
-    verdict=$(fm_backend_send_text_submit "$backend" endpoint instruction 1 0 0 worker-label humanlayer)
-    if [ "$delivery" = swallowed ]; then
-      [ "$verdict" = unknown ] || fail "$backend must not borrow historical confirmation"
-    else
-      [ "$verdict" = empty ] || fail "$backend must confirm current $delivery output"
-    fi
-    [ "$(wc -l < "$TEST_TMP/keys" | tr -d ' ')" = 1 ] || fail "$backend must send Enter once"
-  done
-  pass "$backend confirms current HumanLayer responses without generic composer state"
+backend=herdr
+for delivery in working complete swallowed; do
+  fixture_screen=$'> instruction\n[Assistant] old result\n\033[38;2;34;197;94m[Done]\033[39m complete\n>\n'
+  : > "$TEST_TMP/keys"
+  verdict=$(fm_backend_send_text_submit "$backend" endpoint instruction 1 0 0 worker-label humanlayer)
+  if [ "$delivery" = swallowed ]; then
+    [ "$verdict" = unknown ] || fail "$backend must not borrow historical confirmation"
+  else
+    [ "$verdict" = empty ] || fail "$backend must confirm current $delivery output"
+  fi
+  [ "$(wc -l < "$TEST_TMP/keys" | tr -d ' ')" = 1 ] || fail "$backend must send Enter once"
 done
+pass "$backend confirms current HumanLayer responses without generic composer state"
 
 
 bounded_capture=1
-for backend in herdr; do
-  for delivery in working complete swallowed no-overlap; do
-    fixture_screen=$(for ((row=1; row<=196; row++)); do printf 'history %s\n' "$row"; done
-      printf '> instruction\n[Assistant] old result\n\033[38;2;34;197;94m[Done]\033[39m complete\n>\n')
-    [ "$(printf '%s\n' "$fixture_screen" | wc -l | tr -d ' ')" = 200 ] || fail "baseline must fill the bounded capture"
-    : > "$TEST_TMP/keys"
-    verdict=$(fm_backend_send_text_submit "$backend" endpoint instruction 1 0 0 worker-label humanlayer)
-    case "$delivery" in
-      working|complete) [ "$verdict" = empty ] || fail "$backend must confirm after bounded scroll: $delivery" ;;
-      *) [ "$verdict" = unknown ] || fail "$backend must reject unproven bounded delivery: $delivery" ;;
-    esac
-    [ "$(wc -l < "$TEST_TMP/keys" | tr -d ' ')" = 1 ] || fail "$backend must not resubmit after scrolling"
-  done
-  pass "$backend confirms overlapping captures without borrowing historical responses"
+backend=herdr
+for delivery in working complete swallowed no-overlap; do
+  fixture_screen=$(for ((row=1; row<=196; row++)); do printf 'history %s\n' "$row"; done
+    printf '> instruction\n[Assistant] old result\n\033[38;2;34;197;94m[Done]\033[39m complete\n>\n')
+  [ "$(printf '%s\n' "$fixture_screen" | wc -l | tr -d ' ')" = 200 ] || fail "baseline must fill the bounded capture"
+  : > "$TEST_TMP/keys"
+  verdict=$(fm_backend_send_text_submit "$backend" endpoint instruction 1 0 0 worker-label humanlayer)
+  case "$delivery" in
+    working|complete) [ "$verdict" = empty ] || fail "$backend must confirm after bounded scroll: $delivery" ;;
+    *) [ "$verdict" = unknown ] || fail "$backend must reject unproven bounded delivery: $delivery" ;;
+  esac
+  [ "$(wc -l < "$TEST_TMP/keys" | tr -d ' ')" = 1 ] || fail "$backend must not resubmit after scrolling"
 done
+pass "$backend confirms overlapping captures without borrowing historical responses"
 
 for backend in cmux orca zellij; do
   for fixture_screen in '>' $'> previous prompt\n[Done] complete\n>' $'> previous prompt\n\033[38;2;34;197;94m[Done]\033[39m complete\n>'; do

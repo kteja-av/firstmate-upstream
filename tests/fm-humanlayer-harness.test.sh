@@ -233,7 +233,7 @@ EOF
   # body and the standalone [Done] row, both followed by the usage footer and
   # the bare > composer. CR stripping must be explicit, because whether CR
   # counts as [[:space:]] varies by awk implementation and locale.
-  verdict=$(printf '[Assistant] Done: ready in branch.\r\n\033[0m\033[38;2;34;197;94m[Done]\033[0m complete\r\n  Model  Input  Cost\r\n  gpt-6-astra  1  ~$0.01\r\n> \r\n' | fm_humanlayer_screen_state)
+  verdict=$(printf "[Assistant] Done: ready in branch.\r\n\033[0m\033[38;2;34;197;94m[Done]\033[0m complete\r\n  Model  Input  Cost\r\n  gpt-6-astra  1  ~\$0.01\r\n> \r\n" | fm_humanlayer_screen_state)
   [ "$verdict" = idle ] || fail "a CRLF herdr capture with a Done: assistant body must read idle"
   verdict=$(printf '> Investigate this log:\r\n[Tool] bash command=sleep 30\r\n' | fm_humanlayer_screen_state)
   [ "$verdict" = unknown ] || fail "a CRLF herdr capture mid-turn must not read idle"
