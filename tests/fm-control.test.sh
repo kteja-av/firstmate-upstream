@@ -94,6 +94,9 @@ case "${1:-}" in
     payload=${1:-}
     if [ "$literal" = 1 ]; then
       printf '%s\n' "$payload" >> "$D/literal"
+      if [ "$(cat "$D/command")" = humanlayer ]; then
+        printf '> %s\n' "$payload" > "$D/pane"
+      fi
       if [ -z "${FM_FAKE_NEVER_DIES:-}" ] \
          && { [ "$payload" = /exit ] || [ "$payload" = /quit ]; }; then
         printf 'zsh' > "$D/command"
@@ -103,6 +106,16 @@ case "${1:-}" in
       esac
     else
       printf '%s\n' "$payload" >> "$D/keys"
+      if [ "$payload" = Enter ] && [ "$(cat "$D/command")" = humanlayer ]; then
+        [ ! -e "$D/hl-enter-failed" ] || exit 1
+        if [ ! -e "$D/hl-swallow" ]; then
+          if [ -e "$D/hl-complete" ]; then
+            printf '[Assistant] Finished\n[Done] complete\n>\n' >> "$D/pane"
+          else
+            printf '[Tool] bash command=sleep 30\n' >> "$D/pane"
+          fi
+        fi
+      fi
       if [ "$payload" = C-c ] && [ "$(cat "$D/command")" = humanlayer ]; then
         if [ "$(cat "$D/pane")" = '>' ]; then
           printf 'zsh' > "$D/command"
@@ -936,6 +949,11 @@ test_humanlayer_lifecycle() {
   [ "$rc" -ne 0 ] || fail "idle HumanLayer interrupt must refuse"
   [ ! -s "$dir/fake/keys" ] || fail "idle interrupt must send no key"
   [ "$(cat "$dir/fake/command")" = humanlayer ] || fail "idle worker must survive"
+  printf '[Tool] bash command=old\n[Done] complete\n> Read the new doorbell\nwith wrapped pending text\n' > "$dir/fake/pane"
+  out=$(run_control "$dir" t1 interrupt); rc=$?
+  [ "$rc" -ne 0 ] || fail "pending HumanLayer interrupt must refuse"
+  [ ! -s "$dir/fake/keys" ] || fail "pending interrupt must send no key"
+  [ "$(cat "$dir/fake/command")" = humanlayer ] || fail "pending worker must survive"
   printf '[Tool] bash command=sleep 30\n' > "$dir/fake/pane"
   out=$(run_control "$dir" t1 exit); rc=$?
   expect_code 0 "$rc" "HumanLayer exit must wait for cancellation: $out"
@@ -950,3 +968,31 @@ test_humanlayer_lifecycle() {
   pass "HumanLayer refuses idle interruption and waits for idle before exiting"
 }
 test_humanlayer_lifecycle
+
+test_humanlayer_direct_delivery() {
+  local dir mode out rc
+  for mode in working complete swallow enter-failed busy pending; do
+    dir=$(new_case "hl-send-$mode")
+    add_task "$dir" t1 humanlayer
+    alive_as "$dir" humanlayer
+    printf '> older prompt\n[Tool] bash command=old\n[Done] complete\n>\n' > "$dir/fake/pane"
+    case "$mode" in
+      working) ;;
+      busy) printf '[Tool] bash command=sleep 30\n' > "$dir/fake/pane" ;;
+      pending) printf '> old pending text\n' > "$dir/fake/pane" ;;
+      *) : > "$dir/fake/hl-$mode" ;;
+    esac
+    out=$(env PATH="$dir/fakebin:$PATH" FM_HOME="$dir/home" FM_FAKE_DIR="$dir/fake" \
+      FM_SEND_RETRIES=2 FM_SEND_SLEEP=0 FM_SEND_SETTLE=0 \
+      "$SEND" fmses:fm-t1 'inspect delivery' 2>&1); rc=$?
+    case "$mode" in
+      working|complete) expect_code 0 "$rc" "HumanLayer direct send should confirm $mode: $out" ;;
+      *) [ "$rc" -ne 0 ] || fail "HumanLayer must refuse unproven $mode delivery" ;;
+    esac
+    case "$mode" in
+      busy|pending) [ ! -s "$dir/fake/literal" ] || fail "HumanLayer must not type into $mode input" ;;
+    esac
+  done
+  pass "HumanLayer direct steering confirms output and rejects pending or lost submissions"
+}
+test_humanlayer_direct_delivery

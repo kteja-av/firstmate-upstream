@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+
 # fm-busy-lib.sh - the ONE owner of firstmate's semantic busy-state contract.
 #
 # Design source: the captain-approved semantic busy-state redesign
@@ -98,6 +99,9 @@
 # docs/verification/supervision.md owns the evidence for both probes.
 #
 # Sourcing: set -u and set -e safe; no subshell-unfriendly globals.
+
+# shellcheck source=bin/fm-humanlayer-lib.sh
+. "$(dirname -- "${BASH_SOURCE[0]}")/fm-humanlayer-lib.sh"
 
 FM_BUSY_LIB_VERSION=v1
 
@@ -1057,20 +1061,7 @@ fm_busy_classify() {  # <backend> <target> <harness> <id> <state-dir> [tail40]
           return 0
         fi
       fi
-      # The bare-`>` composer anchor is two-sided where the grok/rovo/agy
-      # markers are one-sided: its presence as the last rendered row is
-      # positive proof of an idle composer, and its absence while the pane
-      # still renders transcript rows is positive proof of a running turn.
-      # Only a blank or unreadable capture stays unknown, never idle.
-      if printf '%s' "$tail40" | grep -qv '^[[:space:]]*$'; then
-        if printf '%s' "$tail40" | fm_busy_humanlayer_tail_idle; then
-          printf 'idle humanlayer-anchor'
-        else
-          printf 'busy humanlayer-anchor'
-        fi
-      else
-        printf 'unknown humanlayer-anchor'
-      fi
+      printf '%s humanlayer-anchor' "$(printf '%s' "$tail40" | fm_humanlayer_screen_state)"
       return 0
       ;;
   esac

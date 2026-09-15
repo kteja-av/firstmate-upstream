@@ -3480,7 +3480,11 @@ agy_spawn_fail() {  # <detail>
 }
 
 humanlayer_capture() {
-  fm_backend_capture "$BACKEND" "$T" 120 "$W" 2>/dev/null || true
+  if [ "$BACKEND" = tmux ]; then
+    tmux capture-pane -p -J -t "$T" -S -120 2>/dev/null || true
+  else
+    fm_backend_capture "$BACKEND" "$T" 120 "$W" 2>/dev/null || true
+  fi
 }
 
 humanlayer_pane_is_ready() {  # <plain-pane-capture>
@@ -3500,11 +3504,7 @@ humanlayer_wait_for_ready() {
 }
 
 humanlayer_delivery_is_confirmed() {
-  printf '%s\n' "$1" | awk '
-    /^> Read the brief at / { submitted = 1; confirmed = 0; next }
-    submitted && /^\[(Tool|Assistant|Done)\]/ { confirmed = 1 }
-    END { exit !confirmed }
-  '
+  printf '%s\n' "$1" | fm_humanlayer_submission_seen "$HUMANLAYER_POINTER"
 }
 
 humanlayer_wait_for_delivery() {
@@ -4523,7 +4523,7 @@ if [ "$HARNESS" = humanlayer ]; then
   HUMANLAYER_SUBMIT_SETTLE=${FM_HUMANLAYER_SUBMIT_SETTLE:-0}
   if ! HUMANLAYER_SUBMIT_VERDICT=$(fm_backend_send_text_submit \
     "$BACKEND" "$T" "$HUMANLAYER_POINTER" "$HUMANLAYER_SUBMIT_RETRIES" \
-    "$HUMANLAYER_SUBMIT_SLEEP" "$HUMANLAYER_SUBMIT_SETTLE" "$W"); then
+    "$HUMANLAYER_SUBMIT_SLEEP" "$HUMANLAYER_SUBMIT_SETTLE" "$W" humanlayer); then
     humanlayer_spawn_fail "humanlayer brief pointer could not be submitted into window $T"
     exit 1
   fi

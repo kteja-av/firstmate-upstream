@@ -199,9 +199,8 @@ EOF
   verdict=$(fm_busy_classify tmux 'win:0' humanlayer hl-test "$HL_STATE" "$tail_tool")
   [ "${verdict%% *}" = busy ] || fail "a mid-turn tool row must classify busy, got '$verdict'"
 
-  # Busy: the submitted prompt's echo row between submit and first output.
   verdict=$(fm_busy_classify tmux 'win:0' humanlayer hl-test "$HL_STATE" "$tail_echo")
-  [ "${verdict%% *}" = busy ] || fail "a submitted echo row must classify busy, got '$verdict'"
+  [ "${verdict%% *}" = unknown ] || fail "a prompt echo without output must stay unknown, got '$verdict'"
 
   # Unknown: a blank or unreadable capture is never idle.
   verdict=$(fm_busy_classify tmux 'win:0' humanlayer hl-test "$HL_STATE" "$tail_blank")
@@ -218,7 +217,7 @@ test_humanlayer_anchor_tolerates_trailing_whitespace_only() {
 
 # --- delivery guard ---------------------------------------------------------
 
-test_humanlayer_delivery_guard_is_the_inverted_anchor() {
+test_humanlayer_delivery_guard_requires_output() {
   local rc
   # Idle tail (bare `>` last) must NOT acknowledge a submit as busy.
   printf '[Done] complete\n\n>\n' | fm_busy_lines_match humanlayer \
@@ -227,12 +226,12 @@ test_humanlayer_delivery_guard_is_the_inverted_anchor() {
   printf '> Run: sleep 30\n[Tool] bash command=sleep 30\n' | fm_busy_lines_match humanlayer \
     || fail "a mid-turn tail must read busy through the humanlayer delivery guard"
   printf '> Read the brief and follow it exactly.\n' | fm_busy_lines_match humanlayer \
-    || fail "a typed composer tail must read busy through the humanlayer delivery guard"
+    && fail "a typed composer tail must not read busy through the humanlayer delivery guard"
   # The explicit FM_BUSY_REGEX override still wins over the anchor arm.
   rc=0
   printf '>\n' | FM_BUSY_REGEX='plugh' fm_busy_lines_match humanlayer || rc=$?
   [ "$rc" -ne 0 ] || fail "the FM_BUSY_REGEX override must take precedence over the humanlayer anchor"
-  pass "composer-lib: the humanlayer delivery guard is the inverted anchor and honors FM_BUSY_REGEX"
+  pass "composer-lib: the humanlayer delivery guard requires output and honors FM_BUSY_REGEX"
 }
 
 # --- spawn ------------------------------------------------------------------
@@ -557,7 +556,7 @@ test_humanlayer_structural_ancestor_outranks_a_retained_marker
 test_humanlayer_control_tables
 test_humanlayer_anchor_classifies_idle_busy_unknown
 test_humanlayer_anchor_tolerates_trailing_whitespace_only
-test_humanlayer_delivery_guard_is_the_inverted_anchor
+test_humanlayer_delivery_guard_requires_output
 test_humanlayer_launch_then_send_is_verified
 test_humanlayer_effort_max_is_recorded_but_omitted
 test_humanlayer_effort_xhigh_maps_to_thinking
