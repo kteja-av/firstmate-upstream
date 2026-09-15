@@ -654,7 +654,7 @@ int main(int argc, char **argv) {
 }
 C
   cc -o "$lab/humanlayer" "$lab/worker.c" || fail "could not build the process-activity fixture"
-  python3 - "$ROOT" "$lab/humanlayer" <<'PYTEST'
+  python3 - "$ROOT" "$lab/humanlayer" <<'PYTEST' || fail "real-process HumanLayer activity checks failed"
 import os
 import signal
 import subprocess
@@ -699,7 +699,6 @@ finally:
         if worker.poll() is None: worker.terminate()
         worker.wait(timeout=3)
 PYTEST
-  [ "$?" -eq 0 ] || fail "real-process HumanLayer activity checks failed"
   pass "HumanLayer activity is scoped to live tool descendants of the identified worker"
 }
 test_humanlayer_real_process_activity
