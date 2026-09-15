@@ -4535,7 +4535,8 @@ if [ "$HARNESS" = humanlayer ]; then
     humanlayer_spawn_fail "humanlayer brief pointer could not be submitted into window $T"
     exit 1
   fi
-  if [ "$HUMANLAYER_SUBMIT_VERDICT" != empty ] && ! humanlayer_wait_for_delivery; then
+  if [ "$HUMANLAYER_SUBMIT_VERDICT" != empty ] \
+    && { [ "$BACKEND" = tmux ] || ! humanlayer_wait_for_delivery; }; then
     humanlayer_spawn_fail "humanlayer brief pointer delivery was not confirmed in window $T"
     exit 1
   fi

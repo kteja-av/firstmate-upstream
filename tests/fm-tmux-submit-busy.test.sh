@@ -367,6 +367,8 @@ test_humanlayer_continuation_and_scrollback() (
   tmux() { "$real_tmux" -L "$socket" "$@"; }
   cat > "$TMP_ROOT/scroll-worker.py" <<'PYWORKER'
 import sys, tty, time
+if sys.argv[1] == "repeated":
+    print("> instruction\n[Tool] bash\n\033[38;2;34;197;94m[Done]\033[39m complete", flush=True)
 print(">", flush=True)
 tty.setraw(sys.stdin.fileno())
 text = ""
@@ -389,7 +391,7 @@ while True:
 PYWORKER
   tmux -f /dev/null new-session -d -s submit
   tmux set-option -g history-limit 20
-  for mode in accepted delayed swallowed; do
+  for mode in accepted delayed swallowed repeated; do
     target="submit:$mode"
     tmux new-window -d -t submit -n "$mode" "python3 '$TMP_ROOT/scroll-worker.py' '$mode'"
     for _ in 1 2 3 4 5 6 7 8 9 10; do
@@ -399,7 +401,7 @@ PYWORKER
     done
     verdict=$(FM_HUMANLAYER_CONFIRM_POLLS=12 FM_HUMANLAYER_CONFIRM_INTERVAL=0.3 \
       fm_tmux_submit_core "$target" instruction 3 0.3 0.1 '' humanlayer)
-    if [ "$mode" != swallowed ]; then
+    if [ "$mode" = accepted ] || [ "$mode" = delayed ]; then
       [ "$verdict" = empty ] || fail "submission evidence must survive lost history: $verdict"
       screen=$(tmux capture-pane -p -t "$target" -S -)
       printf '%s' "$screen" | fm_humanlayer_submission_seen instruction && fail "fixture must lose the prompt from retained history"
@@ -418,3 +420,14 @@ printf '> instruction\n[Tool] bash\n> example\n[Done] complete\n' | fm_humanlaye
 printf '> first\nwrong\n[Tool] bash\n' | fm_humanlayer_submission_seen $'first\nsecond' \
   && fail "mismatched immediate continuation must reject submission proof"
 pass "HumanLayer submission proof survives later output but rejects mismatched continuations"
+
+
+printf '> instruction\n[Tool] bash\n[Done] complete\n> instruction\n' | fm_humanlayer_submission_seen instruction \
+  && fail "a repeated unsubmitted prompt must not inherit earlier proof"
+printf '> first\nsecond\n[Done] complete\n> first\nwrong\n[Tool] bash\n' | fm_humanlayer_submission_seen $'first\nsecond' \
+  && fail "a repeated prompt with a mismatched continuation must not inherit proof"
+[ "$(printf 'retained log row\n>\n' | fm_humanlayer_screen_state)" = unknown ] \
+  || fail "truncated draft ending in a prompt glyph must defer"
+[ "$(printf 'retained log row\n\033[38;2;34;197;94m[Done]\033[39m complete\n>\n' | fm_humanlayer_screen_state)" = idle ] \
+  || fail "styled completion must establish idle provenance after truncation"
+pass "HumanLayer rejects historical delivery proof and ambiguous truncated drafts"

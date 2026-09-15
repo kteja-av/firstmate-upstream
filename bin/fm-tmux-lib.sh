@@ -243,8 +243,8 @@ fm_pane_is_busy() {  # <target> [harness]
 # fm_tmux_submit_enter_core caller, or a pane already busy before typing) an
 # `unknown` verdict is preserved untouched: busy conversion without the
 # transition evidence could mark an undelivered message delivered.
-fm_tmux_submit_enter_core() (  # <target> <retries> <enter-sleep> [baseline-idle] [harness] [text] [baseline-screen]
-  local target=$1 retries=$2 sleep_s=$3 baseline_idle=${4:-} harness=${5:-} text=${6:-} baseline_screen=${7:-} i=0 j state busy_state screen
+fm_tmux_submit_enter_core() (  # <target> <retries> <enter-sleep> [baseline-idle] [harness] [text]
+  local target=$1 retries=$2 sleep_s=$3 baseline_idle=${4:-} harness=${5:-} text=${6:-} i=0 j state busy_state
   local evidence='' pipe_state evidence_command
   local confirm_polls=${FM_HUMANLAYER_CONFIRM_POLLS:-$retries} confirm_interval=${FM_HUMANLAYER_CONFIRM_INTERVAL:-$sleep_s}
   if [ "$harness" = humanlayer ]; then
@@ -266,10 +266,8 @@ fm_tmux_submit_enter_core() (  # <target> <retries> <enter-sleep> [baseline-idle
     if [ "$harness" = humanlayer ]; then
       j=0
       while [ "$j" -lt "$confirm_polls" ]; do
-        screen=$(tmux capture-pane -p -J -t "$target" -S - 2>/dev/null) || screen=
-        if [ "$baseline_idle" = 1 ] && [ -n "$text" ] && [ "$screen" != "$baseline_screen" ] \
-          && { printf '%s' "$screen" | fm_humanlayer_submission_seen "$text" \
-            || fm_composer_strip_ansi < "$evidence" | tr -d '\r' | fm_humanlayer_submission_seen "$text"; }; then
+        if [ "$baseline_idle" = 1 ] && [ -n "$text" ] \
+          && fm_composer_strip_ansi < "$evidence" | tr -d '\r' | fm_humanlayer_submission_seen "$text"; then
           printf 'empty'
           return 0
         fi
@@ -314,16 +312,12 @@ fm_tmux_submit_enter_core() (  # <target> <retries> <enter-sleep> [baseline-idle
 )
 
 fm_tmux_submit_core() {  # <target> <text> <retries> <enter-sleep> <settle> [expected-label] [harness]
-  local target=$1 text=$2 retries=$3 sleep_s=$4 settle=$5 harness=${7:-} baseline_idle='' baseline_state baseline_screen=''
+  local target=$1 text=$2 retries=$3 sleep_s=$4 settle=$5 harness=${7:-} baseline_idle='' baseline_state
   case "$harness" in humanlayer) ;; *) harness= ;; esac
   # The turn-started baseline must predate our own typing: a pane already
   # busy before the text lands can turn "busy" for reasons unrelated to our
   # Enter, so only a clean idle-to-busy transition may confirm a submit.
   if [ "$harness" = humanlayer ]; then
-    baseline_screen=$(tmux capture-pane -p -J -t "$target" -S - 2>/dev/null) || {
-      printf 'unknown'
-      return 0
-    }
     baseline_state=$(fm_humanlayer_capture tmux "$target" | fm_humanlayer_screen_state)
   else
     baseline_state=$(fm_pane_busy_state "$target" "$harness")
@@ -335,5 +329,5 @@ fm_tmux_submit_core() {  # <target> <text> <retries> <enter-sleep> <settle> [exp
   fi
   tmux send-keys -t "$target" -l "$text" 2>/dev/null || { printf 'send-failed'; return 0; }
   sleep "$settle"
-  fm_tmux_submit_enter_core "$target" "$retries" "$sleep_s" "$baseline_idle" "$harness" "$text" "$baseline_screen"
+  fm_tmux_submit_enter_core "$target" "$retries" "$sleep_s" "$baseline_idle" "$harness" "$text"
 }

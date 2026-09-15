@@ -21,7 +21,7 @@ fm_humanlayer_screen_state() {
         if (composer) pending = 1
         composer = 1
         if ($0 !~ /^>[[:space:]]*$/) pending = 1
-      } else if (composer && $0 ~ /[^[:space:]]/) pending = 1
+      } else if ($0 ~ /[^[:space:]]/) pending = 1
       if ($0 ~ /[^[:space:]]/) last = $0
     }
     END { print !pending && last ~ /^>[[:space:]]*$/ ? "idle" : "unknown" }
@@ -50,6 +50,7 @@ fm_humanlayer_submission_seen() {
       remaining--
       next
     }
+    $0 == "> " text[1] { submitted = 1; remaining = count - 1; confirmed = 0; next }
     confirmed { next }
     /^>[[:space:]]*$/ { next }
     /^>/ { submitted = ($0 == "> " text[1]); remaining = count - 1; confirmed = 0; next }
