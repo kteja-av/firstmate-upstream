@@ -1,0 +1,32 @@
+Unreadable backlog configuration: exit=3
+=== Return brief ===
+Supervisor health:
+  - supervision ran through the away window with no detected gap (watcher beat 19s old at return)
+Mandate clauses:
+  (no away-posture record for this window; legacy away flag only)
+Waiting on you:
+  held listing unavailable: /Users/krishnateja/.no-mistakes/worktrees/8371016727df/01M2K43APR8VCF1V6Q0TDGPW9D/.test-live-return/home/data/backlog.md: error: "Invalid config line: expected `key = value`" ; catch-up stays gated
+Tried and failed, or could not be fixed:
+  (nothing)
+Handled while away:
+  (no routine outcomes recorded in the store for this window)
+Cost: 0 supervision outcome(s) recorded (0 routine, 0 captain); 0 task(s) live at return.
+fm-afk-return: catch-up must finish before the captain request
+catch-up health: supervision ran through the away window with no detected gap (watcher beat 19s old at return)
+catch-up lifecycle: held set unreadable: /Users/krishnateja/.no-mistakes/worktrees/8371016727df/01M2K43APR8VCF1V6Q0TDGPW9D/.test-live-return/home/data/backlog.md; catch-up stays gated
+fm-afk-return: handle each blocker now, or close it with resolved [key=...] and append a durable reclassification reason, then run bin/fm-afk-return.sh check
+Restored configuration: exit=0
+=== Return brief ===
+Supervisor health:
+  - supervision ran through the away window with no detected gap (watcher beat 19s old at return)
+Mandate clauses:
+  (no away-posture record for this window; legacy away flag only)
+Waiting on you:
+  (nothing)
+Tried and failed, or could not be fixed:
+  (nothing)
+Handled while away:
+  (no routine outcomes recorded in the store for this window)
+Cost: 0 supervision outcome(s) recorded (0 routine, 0 captain); 0 task(s) live at return.
+catch-up health: supervision ran through the away window with no detected gap (watcher beat 19s old at return)
+fm-afk-return: catch-up clear; ordinary captain work may proceed

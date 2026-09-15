@@ -1,0 +1,29 @@
+Actual CLI with OS file-size limit 110 bytes
+exit=1
+bin/fm-afk-return.sh: line 531: cannot create temp file for here document: File too large
+awk: i/o error occurred while closing /dev/stdout
+ input record number 2, file /Users/krishnateja/.no-mistakes/worktrees/8371016727df/01M2K43APR8VCF1V6Q0TDGPW9D/.test-live-return/home/state/.afk-return-evidence.tOBkaQ
+ source line number 1
+
+Gate retained:
+schema	fm-afk-return.v1
+started	1789496764
+phase	stopping-and-draining
+window	1789496764
+Away flag retained; shutdown not performed.
+Retry exit=0
+=== Return brief (away 2026-09-15T18:26:04Z -> 2026-09-15T18:26:05Z, 1s) ===
+Supervisor health:
+  - GAP: the away daemon was not running at return (the away flag stood with no live daemon)
+Mandate clauses:
+  (no away-posture record for this window; legacy away flag only)
+Waiting on you:
+  (nothing)
+Tried and failed, or could not be fixed:
+  (nothing)
+Handled while away:
+  (no routine outcomes recorded in the store for this window)
+Cost: 0 supervision outcome(s) recorded (0 routine, 0 captain); 0 task(s) live at return.
+catch-up health: GAP: the away daemon was not running at return (the away flag stood with no live daemon)
+fm-afk-return: catch-up clear; ordinary captain work may proceed
+fm-afk-launch: away mode stopped; daemon terminal torn down, .afk cleared, and the posture record archived

@@ -1,0 +1,57 @@
+$ fm-afk-return.sh begin [stdout: closed pipe]
+exit=3
+fm-afk-launch: away mode stopped; daemon terminal torn down, .afk cleared, and the posture record archived
+fm-afk-return: recovery evidence could not be published; catch-up remains pending
+
+Persisted gate after failed publication:
+schema	fm-afk-return.v1
+started	1789496706
+phase	blocked
+window	1789496706
+evidence	health	GAP: the away daemon was not running at return (the away flag stood with no live daemon)
+evidence	escalation	retained live recovery evidence
+evidence	lifecycle	recovery evidence publication failed; retry catch-up before ordinary work
+
+$ fm-afk-return.sh guard
+exit=4
+fm-afk-return: return catch-up is pending with no open blocker; clear the retention reason below, then run bin/fm-afk-return.sh check
+catch-up retained: recovery evidence publication failed; retry catch-up before ordinary work
+
+$ fm-afk-return.sh check
+exit=0
+=== Return brief (away 2026-09-15T18:25:06Z -> 2026-09-15T18:25:07Z, 1s) ===
+Supervisor health:
+  - GAP: the away daemon was not running at return (the away flag stood with no live daemon)
+Mandate clauses:
+  (no away-posture record for this window; legacy away flag only)
+Waiting on you:
+  (nothing)
+Tried and failed, or could not be fixed:
+  (nothing)
+Handled while away:
+  (no routine outcomes recorded in the store for this window)
+Cost: 0 supervision outcome(s) recorded (0 routine, 0 captain); 0 task(s) live at return.
+catch-up health: GAP: the away daemon was not running at return (the away flag stood with no live daemon)
+catch-up escalation: retained live recovery evidence
+catch-up lifecycle: recovery evidence publication failed; retry catch-up before ordinary work
+fm-afk-return: catch-up clear; ordinary captain work may proceed
+
+$ fm-afk-return.sh guard
+exit=0
+
+$ fm-afk-return.sh check
+exit=0
+=== Return brief ===
+Supervisor health:
+  - supervision ran through the away window with no detected gap (watcher beat 0s old at return)
+Mandate clauses:
+  (no away-posture record for this window; legacy away flag only)
+Waiting on you:
+  (nothing)
+Tried and failed, or could not be fixed:
+  (nothing)
+Handled while away:
+  (no routine outcomes recorded in the store for this window)
+Cost: 0 supervision outcome(s) recorded (0 routine, 0 captain); 0 task(s) live at return.
+catch-up health: supervision ran through the away window with no detected gap (watcher beat 0s old at return)
+fm-afk-return: catch-up clear; ordinary captain work may proceed
