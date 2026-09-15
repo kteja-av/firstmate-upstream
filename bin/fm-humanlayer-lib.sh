@@ -50,6 +50,7 @@ fm_humanlayer_submission_seen() {
       remaining--
       next
     }
+    confirmed { next }
     /^>[[:space:]]*$/ { next }
     /^>/ { submitted = ($0 == "> " text[1]); remaining = count - 1; confirmed = 0; next }
     submitted && /^\[(Tool|Assistant|Done)\]/ { confirmed = 1 }

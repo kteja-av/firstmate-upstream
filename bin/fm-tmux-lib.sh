@@ -246,6 +246,7 @@ fm_pane_is_busy() {  # <target> [harness]
 fm_tmux_submit_enter_core() (  # <target> <retries> <enter-sleep> [baseline-idle] [harness] [text] [baseline-screen]
   local target=$1 retries=$2 sleep_s=$3 baseline_idle=${4:-} harness=${5:-} text=${6:-} baseline_screen=${7:-} i=0 j state busy_state screen
   local evidence='' pipe_state evidence_command
+  local confirm_polls=${FM_HUMANLAYER_CONFIRM_POLLS:-$retries} confirm_interval=${FM_HUMANLAYER_CONFIRM_INTERVAL:-$sleep_s}
   if [ "$harness" = humanlayer ]; then
     pipe_state=$(tmux display-message -p -t "$target" '#{pane_pipe}' 2>/dev/null) || { printf 'unknown'; return 0; }
     [ "$pipe_state" != 1 ] || { printf 'unknown'; return 0; }
@@ -264,7 +265,7 @@ fm_tmux_submit_enter_core() (  # <target> <retries> <enter-sleep> [baseline-idle
     sleep "$sleep_s"
     if [ "$harness" = humanlayer ]; then
       j=0
-      while [ "$j" -lt "$retries" ]; do
+      while [ "$j" -lt "$confirm_polls" ]; do
         screen=$(tmux capture-pane -p -J -t "$target" -S - 2>/dev/null) || screen=
         if [ "$baseline_idle" = 1 ] && [ -n "$text" ] && [ "$screen" != "$baseline_screen" ] \
           && { printf '%s' "$screen" | fm_humanlayer_submission_seen "$text" \
@@ -273,7 +274,7 @@ fm_tmux_submit_enter_core() (  # <target> <retries> <enter-sleep> [baseline-idle
           return 0
         fi
         j=$((j + 1))
-        [ "$j" -ge "$retries" ] || sleep "$sleep_s"
+        [ "$j" -ge "$confirm_polls" ] || sleep "$confirm_interval"
       done
       printf 'unknown'
       return 0

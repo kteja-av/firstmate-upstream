@@ -366,17 +366,20 @@ test_humanlayer_continuation_and_scrollback() (
   trap '"$real_tmux" -L "$socket" kill-server 2>/dev/null || true' EXIT
   tmux() { "$real_tmux" -L "$socket" "$@"; }
   cat > "$TMP_ROOT/scroll-worker.py" <<'PYWORKER'
-import sys, tty
+import sys, tty, time
 print(">", flush=True)
 tty.setraw(sys.stdin.fileno())
 text = ""
 while True:
     char = sys.stdin.read(1)
     if char in "\r\n":
-        if sys.argv[1] == "accepted":
+        if sys.argv[1] in ("accepted", "delayed"):
+            if sys.argv[1] == "delayed":
+                time.sleep(2)
             print("\r\n> " + text + "\r\n[Tool] bash command=produce-output", flush=True)
             for i in range(2000):
                 print("\r\noutput " + str(i), end="")
+            print("\r\n> example\r\n[Done] complete", flush=True)
             sys.stdout.flush()
         else:
             print("\r\n> " + text, flush=True)
@@ -386,7 +389,7 @@ while True:
 PYWORKER
   tmux -f /dev/null new-session -d -s submit
   tmux set-option -g history-limit 20
-  for mode in accepted swallowed; do
+  for mode in accepted delayed swallowed; do
     target="submit:$mode"
     tmux new-window -d -t submit -n "$mode" "python3 '$TMP_ROOT/scroll-worker.py' '$mode'"
     for _ in 1 2 3 4 5 6 7 8 9 10; do
@@ -394,8 +397,9 @@ PYWORKER
       [ "$(printf '%s' "$screen" | fm_humanlayer_screen_state)" != idle ] || break
       sleep 0.1
     done
-    verdict=$(fm_tmux_submit_core "$target" instruction 3 0.3 0.1 '' humanlayer)
-    if [ "$mode" = accepted ]; then
+    verdict=$(FM_HUMANLAYER_CONFIRM_POLLS=12 FM_HUMANLAYER_CONFIRM_INTERVAL=0.3 \
+      fm_tmux_submit_core "$target" instruction 3 0.3 0.1 '' humanlayer)
+    if [ "$mode" != swallowed ]; then
       [ "$verdict" = empty ] || fail "submission evidence must survive lost history: $verdict"
       screen=$(tmux capture-pane -p -t "$target" -S -)
       printf '%s' "$screen" | fm_humanlayer_submission_seen instruction && fail "fixture must lose the prompt from retained history"
@@ -407,3 +411,10 @@ PYWORKER
   pass "HumanLayer rejects bare continuations and confirms delivery beyond retained history"
 )
 test_humanlayer_continuation_and_scrollback
+
+
+printf '> instruction\n[Tool] bash\n> example\n[Done] complete\n' | fm_humanlayer_submission_seen instruction \
+  || fail "later blockquotes must retain established submission proof"
+printf '> first\nwrong\n[Tool] bash\n' | fm_humanlayer_submission_seen $'first\nsecond' \
+  && fail "mismatched immediate continuation must reject submission proof"
+pass "HumanLayer submission proof survives later output but rejects mismatched continuations"
